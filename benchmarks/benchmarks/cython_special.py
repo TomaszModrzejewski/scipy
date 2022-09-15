@@ -47,7 +47,7 @@ class _CythonSpecialMeta(type):
                 else:
                     self.cy_func(N, *args)
 
-            func.__name__ = 'time_' + name
+            func.__name__ = f'time_{name}'
             return func
 
         for name in FUNC_ARGS.keys():
@@ -59,12 +59,10 @@ class _CythonSpecialMeta(type):
 
 class CythonSpecial(metaclass=_CythonSpecialMeta):
     def setup(self, name, args, N, api):
-        self.py_func = getattr(cython_special, '_bench_{}_py'.format(name))
-        self.cy_func = getattr(cython_special, '_bench_{}_cy'.format(name))
+        self.py_func = getattr(cython_special, f'_bench_{name}_py')
+        self.cy_func = getattr(cython_special, f'_bench_{name}_cy')
         m = re.match('^(.*)_[dDl]+$', name)
-        self.np_func = getattr(special, m.group(1))
+        self.np_func = getattr(special, m[1])
 
-        self.obj = []
-        for arg in args:
-            self.obj.append(arg*np.ones(N))
+        self.obj = [arg*np.ones(N) for arg in args]
         self.obj = tuple(self.obj)

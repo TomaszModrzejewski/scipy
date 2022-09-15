@@ -35,8 +35,7 @@ def _assert_n_smooth(x, n):
                 break
             x = q
 
-    assert x == 1, \
-           'x={} is not {}-smooth, remainder={}'.format(x_orig, n, x)
+    assert x == 1, f'x={x_orig} is not {n}-smooth, remainder={x}'
 
 
 class TestNextFastLen:

@@ -84,7 +84,7 @@ class TestLinkage:
     def check_linkage_tdist(self, method):
         # Tests linkage(Y, method) on the tdist data set.
         Z = linkage(hierarchy_test_data.ytdist, method)
-        expectedZ = getattr(hierarchy_test_data, 'linkage_ytdist_' + method)
+        expectedZ = getattr(hierarchy_test_data, f'linkage_ytdist_{method}')
         assert_allclose(Z, expectedZ, atol=1e-10)
 
     def test_linkage_X(self):
@@ -94,7 +94,7 @@ class TestLinkage:
     def check_linkage_q(self, method):
         # Tests linkage(Y, method) on the Q data set.
         Z = linkage(hierarchy_test_data.X, method)
-        expectedZ = getattr(hierarchy_test_data, 'linkage_X_' + method)
+        expectedZ = getattr(hierarchy_test_data, f'linkage_X_{method}')
         assert_allclose(Z, expectedZ, atol=1e-06)
 
         y = scipy.spatial.distance.pdist(hierarchy_test_data.X,
@@ -218,7 +218,7 @@ class TestFcluster:
 
     def check_fclusterdata(self, t, criterion):
         # Tests fclusterdata(X, criterion=criterion, t=t) on a random 3-cluster data set.
-        expectedT = getattr(hierarchy_test_data, 'fcluster_' + criterion)[t]
+        expectedT = getattr(hierarchy_test_data, f'fcluster_{criterion}')[t]
         X = hierarchy_test_data.Q_X
         T = fclusterdata(X, criterion=criterion, t=t)
         assert_(is_isomorphic(T, expectedT))
@@ -233,7 +233,7 @@ class TestFcluster:
 
     def check_fcluster(self, t, criterion):
         # Tests fcluster(Z, criterion=criterion, t=t) on a random 3-cluster data set.
-        expectedT = getattr(hierarchy_test_data, 'fcluster_' + criterion)[t]
+        expectedT = getattr(hierarchy_test_data, f'fcluster_{criterion}')[t]
         Z = single(hierarchy_test_data.Q_X)
         T = fcluster(Z, criterion=criterion, t=t)
         assert_(is_isomorphic(T, expectedT))
@@ -329,16 +329,16 @@ class TestIsIsomorphic:
         assert_(not is_isomorphic([1, 2, 3], [1, 1, 1]))
 
     def help_is_isomorphic_randperm(self, nobs, nclusters, noniso=False, nerrors=0):
-        for k in range(3):
+        for _ in range(3):
             a = np.int_(np.random.rand(nobs) * nclusters)
             b = np.zeros(a.size, dtype=np.int_)
             P = np.random.permutation(nclusters)
-            for i in range(0, a.shape[0]):
+            for i in range(a.shape[0]):
                 b[i] = P[a[i]]
             if noniso:
                 Q = np.random.permutation(nobs)
-                b[Q[0:nerrors]] += 1
-                b[Q[0:nerrors]] %= nclusters
+                b[Q[:nerrors]] += 1
+                b[Q[:nerrors]] %= nclusters
             assert_(is_isomorphic(a, b) == (not noniso))
             assert_(is_isomorphic(b, a) == (not noniso))
 
@@ -956,7 +956,7 @@ def calculate_maximum_distances(Z):
     n = Z.shape[0] + 1
     B = np.zeros((n-1,))
     q = np.zeros((3,))
-    for i in range(0, n - 1):
+    for i in range(n - 1):
         q[:] = 0.0
         left = Z[i, 0]
         right = Z[i, 1]
@@ -974,7 +974,7 @@ def calculate_maximum_inconsistencies(Z, R, k=3):
     n = Z.shape[0] + 1
     B = np.zeros((n-1,))
     q = np.zeros((3,))
-    for i in range(0, n - 1):
+    for i in range(n - 1):
         q[:] = 0.0
         left = Z[i, 0]
         right = Z[i, 1]

@@ -151,10 +151,7 @@ class OdeSolver:
 
     @property
     def step_size(self):
-        if self.t_old is None:
-            return None
-        else:
-            return np.abs(self.t - self.t_old)
+        return None if self.t_old is None else np.abs(self.t - self.t_old)
 
     def step(self):
         """Perform one integration step.
@@ -268,7 +265,6 @@ class ConstantDenseOutput(DenseOutput):
     def _call_impl(self, t):
         if t.ndim == 0:
             return self.value
-        else:
-            ret = np.empty((self.value.shape[0], t.shape[0]))
-            ret[:] = self.value[:, None]
-            return ret
+        ret = np.empty((self.value.shape[0], t.shape[0]))
+        ret[:] = self.value[:, None]
+        return ret

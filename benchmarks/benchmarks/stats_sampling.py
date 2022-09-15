@@ -69,9 +69,7 @@ class contdist3:
 
     def cdf(self, x):
         x -= self.shift
-        if x <= 0.:
-            return 0.5 / (1. - x)
-        return 1. - 0.5 / (1. + x)
+        return 0.5 / (1. - x) if x <= 0. else 1. - 0.5 / (1. + x)
 
     def __repr__(self):
         return f'sqrtlinshft({self.shift})'
@@ -172,10 +170,7 @@ class SimpleRatioUniforms(Benchmark):
     def setup(self, dist, cdf_at_mode):
         self.urng = np.random.default_rng(0xfaad7df1c89e050200dbe258636b3265)
         try:
-            if cdf_at_mode:
-                cdf_at_mode = dist.cdf(dist.mode)
-            else:
-                cdf_at_mode = None
+            cdf_at_mode = dist.cdf(dist.mode) if cdf_at_mode else None
             self.rng = sampling.SimpleRatioUniforms(
                 dist, mode=dist.mode,
                 cdf_at_mode=cdf_at_mode,
@@ -185,10 +180,7 @@ class SimpleRatioUniforms(Benchmark):
             raise NotImplementedError(f"{dist} not T-concave")
 
     def time_srou_setup(self, dist, cdf_at_mode):
-        if cdf_at_mode:
-            cdf_at_mode = dist.cdf(dist.mode)
-        else:
-            cdf_at_mode = None
+        cdf_at_mode = dist.cdf(dist.mode) if cdf_at_mode else None
         sampling.SimpleRatioUniforms(
             dist, mode=dist.mode,
             cdf_at_mode=cdf_at_mode,

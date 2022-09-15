@@ -274,6 +274,4 @@ class AMGM(Benchmark):
         f2 = prod(x)
         f1 = f1 / self.N
         f2 = f2 ** (1.0 / self.N)
-        f = (f1 - f2) ** 2
-
-        return f
+        return (f1 - f2) ** 2

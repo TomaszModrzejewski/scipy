@@ -52,8 +52,7 @@ def _import_object(name):
     parts = name.split('.')
     module_name = '.'.join(parts[:-1])
     __import__(module_name)
-    obj = getattr(sys.modules[module_name], parts[-1])
-    return obj
+    return getattr(sys.modules[module_name], parts[-1])
 
 
 class ScipyOptimizeInterfaceDomain(PythonDomain):

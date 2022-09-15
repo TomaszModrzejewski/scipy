@@ -69,16 +69,18 @@ class Convolve2D(Benchmark):
 
     def time_convolve2d(self, mode, boundary):
         for a, b in self.pairs:
-            if mode == 'valid':
-                if b.shape[0] > a.shape[0] or b.shape[1] > a.shape[1]:
-                    continue
+            if mode == 'valid' and (
+                b.shape[0] > a.shape[0] or b.shape[1] > a.shape[1]
+            ):
+                continue
             signal.convolve2d(a, b, mode=mode, boundary=boundary)
 
     def time_correlate2d(self, mode, boundary):
         for a, b in self.pairs:
-            if mode == 'valid':
-                if b.shape[0] > a.shape[0] or b.shape[1] > a.shape[1]:
-                    continue
+            if mode == 'valid' and (
+                b.shape[0] > a.shape[0] or b.shape[1] > a.shape[1]
+            ):
+                continue
             signal.correlate2d(a, b, mode=mode, boundary=boundary)
 
 
@@ -146,9 +148,10 @@ class Convolve(Benchmark):
 
     def time_convolve2d(self, mode):
         for a, b in self.pairs['2d']:
-            if mode == 'valid':
-                if b.shape[0] > a.shape[0] or b.shape[1] > a.shape[1]:
-                    continue
+            if mode == 'valid' and (
+                b.shape[0] > a.shape[0] or b.shape[1] > a.shape[1]
+            ):
+                continue
             signal.convolve(a, b, mode=mode)
 
     def time_correlate(self, mode):
@@ -159,9 +162,10 @@ class Convolve(Benchmark):
 
     def time_correlate2d(self, mode):
         for a, b in self.pairs['2d']:
-            if mode == 'valid':
-                if b.shape[0] > a.shape[0] or b.shape[1] > a.shape[1]:
-                    continue
+            if mode == 'valid' and (
+                b.shape[0] > a.shape[0] or b.shape[1] > a.shape[1]
+            ):
+                continue
             signal.correlate(a, b, mode=mode)
 
 

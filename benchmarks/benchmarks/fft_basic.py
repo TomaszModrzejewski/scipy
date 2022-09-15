@@ -334,9 +334,7 @@ class FftThreading(Benchmark):
             self.pool = futures.ThreadPoolExecutor(os.cpu_count())
 
     def map_thread(self, func):
-        f = []
-        for x in self.xs:
-            f.append(self.pool.submit(func, x))
+        f = [self.pool.submit(func, x) for x in self.xs]
         futures.wait(f)
 
     def time_fft(self, size, num_transforms, method):

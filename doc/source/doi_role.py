@@ -23,9 +23,9 @@ from sphinx.util.nodes import split_explicit_title
 def doi_role(typ, rawtext, text, lineno, inliner, options={}, content=[]):
     text = utils.unescape(text)
     has_explicit_title, title, part = split_explicit_title(text)
-    full_url = 'https://doi.org/' + part
+    full_url = f'https://doi.org/{part}'
     if not has_explicit_title:
-        title = 'DOI:' + part
+        title = f'DOI:{part}'
     pnode = nodes.reference(title, title, internal=False, refuri=full_url)
     return [pnode], []
 
@@ -33,9 +33,9 @@ def doi_role(typ, rawtext, text, lineno, inliner, options={}, content=[]):
 def arxiv_role(typ, rawtext, text, lineno, inliner, options={}, content=[]):
     text = utils.unescape(text)
     has_explicit_title, title, part = split_explicit_title(text)
-    full_url = 'https://arxiv.org/abs/' + part
+    full_url = f'https://arxiv.org/abs/{part}'
     if not has_explicit_title:
-        title = 'arXiv:' + part
+        title = f'arXiv:{part}'
     pnode = nodes.reference(title, title, internal=False, refuri=full_url)
     return [pnode], []
 

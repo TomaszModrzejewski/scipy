@@ -1,4 +1,5 @@
 """MC vs QMC in terms of space filling."""
+
 from scipy.stats import qmc
 import numpy as np
 
@@ -10,10 +11,7 @@ rng = np.random.default_rng()
 n_sample = 256
 dim = 2
 
-sample = {}
-
-# MC
-sample['MC'] = rng.random((n_sample, dim))
+sample = {'MC': rng.random((n_sample, dim))}
 
 # Sobol'
 engine = qmc.Sobol(d=dim, seed=rng)

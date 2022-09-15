@@ -81,7 +81,7 @@ def check_submodules():
             if 'path' in l:
                 p = l.split('=')[-1].strip()
                 if not os.path.exists(p):
-                    raise ValueError('Submodule %s missing' % p)
+                    raise ValueError(f'Submodule {p} missing')
 
 
     proc = subprocess.Popen(['git', 'submodule', 'status'],
@@ -90,7 +90,7 @@ def check_submodules():
     status = status.decode("ascii", "replace")
     for line in status.splitlines():
         if line.startswith('-') or line.startswith('+'):
-            raise ValueError('Submodule not clean: %s' % line)
+            raise ValueError(f'Submodule not clean: {line}')
 
 
 class concat_license_files():
@@ -144,13 +144,14 @@ def get_build_ext_override():
             BaseBuildExt = PythranBuildExt[npy_build_ext]
             _pep440 = importlib.import_module('scipy._lib._pep440')
             if _pep440.parse(pythran.__version__) < _pep440.Version('0.11.0'):
-                raise RuntimeError("The installed `pythran` is too old, >= "
-                                   "0.11.0 is needed, {} detected. Please "
-                                   "upgrade Pythran, or use `export "
-                                   "SCIPY_USE_PYTHRAN=0`.".format(
-                                   pythran.__version__))
+                raise RuntimeError(
+                    f"The installed `pythran` is too old, >= 0.11.0 is needed, {pythran.__version__} detected. Please upgrade Pythran, or use `export SCIPY_USE_PYTHRAN=0`."
+                )
+
     else:
         BaseBuildExt = npy_build_ext
+
+
 
     class build_ext(BaseBuildExt):
         def finalize_options(self):
@@ -170,12 +171,17 @@ def get_build_ext_override():
                 export_symbols = self.get_export_symbols(ext)
                 text = '{global: %s; local: *; };' % (';'.join(export_symbols),)
 
-                script_fn = os.path.join(self.build_temp, 'link-version-{}.map'.format(ext.name))
+                script_fn = os.path.join(self.build_temp, f'link-version-{ext.name}.map')
                 with open(script_fn, 'w') as f:
                     f.write(text)
                     # line below fixes gh-8680
-                    ext.extra_link_args = [arg for arg in ext.extra_link_args if not "version-script" in arg]
-                    ext.extra_link_args.append('-Wl,--version-script=' + script_fn)
+                    ext.extra_link_args = [
+                        arg
+                        for arg in ext.extra_link_args
+                        if "version-script" not in arg
+                    ]
+
+                    ext.extra_link_args.append(f'-Wl,--version-script={script_fn}')
 
             # Allow late configuration
             hooks = getattr(ext, '_pre_build_hook', ())
@@ -204,6 +210,7 @@ def get_build_ext_override():
                     compiler_name = os.path.basename(cc.split(" ")[0])
                     is_gcc = "gcc" in compiler_name or "g++" in compiler_name
             return is_gcc and sysconfig.get_config_var('GNULD') == 'yes'
+
 
     return build_ext
 
@@ -252,15 +259,15 @@ def generate_cython():
         try:
             # Note, pip may not be installed or not have been used
             import pip
-        except (ImportError, ModuleNotFoundError):
+        except ImportError:
             raise RuntimeError("Running cythonize failed!")
         else:
             _pep440 = importlib.import_module('scipy._lib._pep440')
             if _pep440.parse(pip.__version__) < _pep440.Version('18.0.0'):
-                raise RuntimeError("Cython not found or too old. Possibly due "
-                                   "to `pip` being too old, found version {}, "
-                                   "needed is >= 18.0.0.".format(
-                                   pip.__version__))
+                raise RuntimeError(
+                    f"Cython not found or too old. Possibly due to `pip` being too old, found version {pip.__version__}, needed is >= 18.0.0."
+                )
+
             else:
                 raise RuntimeError("Running cythonize failed!")
 
@@ -370,9 +377,9 @@ def parse_setuppy_commands():
     for command in ('upload_docs', 'easy_install', 'bdist', 'bdist_dumb',
                      'register', 'check', 'install_data', 'install_headers',
                      'install_lib', 'install_scripts', ):
-        bad_commands[command] = "`setup.py %s` is not supported" % command
+        bad_commands[command] = f"`setup.py {command}` is not supported"
 
-    for command in bad_commands.keys():
+    for command in bad_commands:
         if command in args:
             print(textwrap.dedent(bad_commands[command]) +
                   "\nAdd `--force` to your command to use it anyway if you "
@@ -387,9 +394,10 @@ def parse_setuppy_commands():
             return False
 
     # If we got here, we didn't detect what setup.py command was given
-    warnings.warn("Unrecognized setuptools command ('{}'), proceeding with "
-                  "generating Cython sources and expanding templates".format(
-                  ' '.join(sys.argv[1:])))
+    warnings.warn(
+        f"Unrecognized setuptools command ('{' '.join(sys.argv[1:])}'), proceeding with generating Cython sources and expanding templates"
+    )
+
     return True
 
 def check_setuppy_command():
@@ -450,15 +458,15 @@ def setup_package():
     #            in N+1 will turn into errors in N+3
     # For Python versions, if releases is (e.g.) <=3.9.x, set bound to 3.10
     np_minversion = '1.19.5'
-    np_maxversion = '9.9.99'
     python_minversion = '3.8'
-    python_maxversion = '3.10'
     if IS_RELEASE_BRANCH:
-        req_np = 'numpy>={},<{}'.format(np_minversion, np_maxversion)
-        req_py = '>={},<{}'.format(python_minversion, python_maxversion)
+        np_maxversion = '9.9.99'
+        req_np = f'numpy>={np_minversion},<{np_maxversion}'
+        python_maxversion = '3.10'
+        req_py = f'>={python_minversion},<{python_maxversion}'
     else:
-        req_np = 'numpy>={}'.format(np_minversion)
-        req_py = '>={}'.format(python_minversion)
+        req_np = f'numpy>={np_minversion}'
+        req_py = f'>={python_minversion}'
 
     # Rewrite the version file every time
     write_version_py('.')
@@ -509,7 +517,7 @@ def setup_package():
         cmdclass['build_ext'] = get_build_ext_override()
         cmdclass['build_clib'] = get_build_clib_override()
 
-        if not 'sdist' in sys.argv:
+        if 'sdist' not in sys.argv:
             # Generate Cython sources, unless we're creating an sdist
             # Cython is a build dependency, and shipping generated .c files
             # can cause problems (see gh-14199)

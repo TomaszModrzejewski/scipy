@@ -10,7 +10,7 @@ def generate_random_token():
     tokens = list(np.arange(k, dtype=int))
     tokens += list(np.arange(k, dtype=float))
     tokens += list(string.ascii_letters)
-    tokens += [None for i in range(k)]
+    tokens += [None for _ in range(k)]
     tokens = np.array(tokens, dtype=object)
     rng = np.random.RandomState(seed=0)
 

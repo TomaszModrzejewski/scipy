@@ -21,10 +21,7 @@ class Laplacian(Benchmark):
         data = np.vstack((data, data))
         diags = list(range(-9, 0)) + list(range(1, 10))
         A = scipy.sparse.spdiags(data, diags, n, n)
-        if format == 'dense':
-            self.A = A.toarray()
-        else:
-            self.A = A.asformat(format)
+        self.A = A.toarray() if format == 'dense' else A.asformat(format)
 
     def time_laplacian(self, n, format, normed):
         laplacian(self.A, normed=normed)

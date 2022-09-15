@@ -1,4 +1,5 @@
 """Multiple MC to show how it can be bad."""
+
 from scipy.stats import qmc
 from scipy.stats._qmc import check_random_state
 import numpy as np
@@ -11,10 +12,8 @@ rng = np.random.default_rng()
 n_sample = 256
 dim = 2
 
-sample = {}
+sample = {'MC 1': rng.random((n_sample, dim))}
 
-# MC
-sample['MC 1'] = rng.random((n_sample, dim))
 sample["MC 2"] = rng.random((n_sample, dim))
 
 fig, axs = plt.subplots(1, 2, figsize=(8, 4))

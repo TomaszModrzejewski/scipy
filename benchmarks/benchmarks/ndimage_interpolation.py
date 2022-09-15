@@ -35,10 +35,7 @@ class NdimageInterpolation(Benchmark):
                                      [0, 0, 1, 0]])
 
     def time_affine_transform(self, shape, order, mode):
-        if self.x.ndim == 2:
-            matrix = self.matrix_2d
-        else:
-            matrix = self.matrix_3d
+        matrix = self.matrix_2d if self.x.ndim == 2 else self.matrix_3d
         affine_transform(self.x, matrix, order=order, mode=mode)
 
     def time_rotate(self, shape, order, mode):

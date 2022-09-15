@@ -453,13 +453,14 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
 
     if ier in [1,2,3,4,5,7]:
         if full_output:
-            if weight in ['cos', 'sin'] and (b == Inf or a == -Inf):
-                return retval[:-1] + (msg, explain)
-            else:
-                return retval[:-1] + (msg,)
-        else:
-            warnings.warn(msg, IntegrationWarning, stacklevel=2)
-            return retval[:-1]
+            return (
+                retval[:-1] + (msg, explain)
+                if weight in ['cos', 'sin'] and (b == Inf or a == -Inf)
+                else retval[:-1] + (msg,)
+            )
+
+        warnings.warn(msg, IntegrationWarning, stacklevel=2)
+        return retval[:-1]
 
     elif ier == 6:  # Forensic decision tree when QUADPACK throws ier=6
         if epsabs <= 0:  # Small error tolerance - applies to all methods
@@ -474,31 +475,29 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
             if points is None:  # QAGSE/QAGIE
                 msg = ("Invalid 'limit' argument. There must be"
                        " at least one subinterval")
-            else:  # QAGPE
-                if not (min(a, b) <= min(points) <= max(points) <= max(a, b)):
-                    msg = ("All break points in 'points' must lie within the"
-                           " integration limits.")
-                elif len(points) >= limit:
-                    msg = ("Number of break points ({:d})"
-                           " must be less than subinterval"
-                           " limit ({:d})").format(len(points), limit)
+            elif not (min(a, b) <= min(points) <= max(points) <= max(a, b)):
+                msg = ("All break points in 'points' must lie within the"
+                       " integration limits.")
+            elif len(points) >= limit:
+                msg = ("Number of break points ({:d})"
+                       " must be less than subinterval"
+                       " limit ({:d})").format(len(points), limit)
 
-        else:
-            if maxp1 < 1:
-                msg = "Chebyshev moment limit maxp1 must be >=1."
+        elif maxp1 < 1:
+            msg = "Chebyshev moment limit maxp1 must be >=1."
 
-            elif weight in ('cos', 'sin') and abs(a+b) == Inf:  # QAWFE
-                msg = "Cycle limit limlst must be >=3."
+        elif weight in ('cos', 'sin') and abs(a+b) == Inf:  # QAWFE
+            msg = "Cycle limit limlst must be >=3."
 
-            elif weight.startswith('alg'):  # QAWSE
-                if min(wvar) < -1:
-                    msg = "wvar parameters (alpha, beta) must both be >= -1."
-                if b < a:
-                    msg = "Integration limits a, b must satistfy a<b."
+        elif weight.startswith('alg'):  # QAWSE
+            if min(wvar) < -1:
+                msg = "wvar parameters (alpha, beta) must both be >= -1."
+            if b < a:
+                msg = "Integration limits a, b must satistfy a<b."
 
-            elif weight == 'cauchy' and wvar in (a, b):
-                msg = ("Parameter 'wvar' must not equal"
-                       " integration limits 'a' or 'b'.")
+        elif weight == 'cauchy' and wvar in (a, b):
+            msg = ("Parameter 'wvar' must not equal"
+                   " integration limits 'a' or 'b'.")
 
     raise ValueError(msg)
 
@@ -510,49 +509,56 @@ def _quad(func,a,b,args,full_output,epsabs,epsrel,limit,points):
     elif (b == Inf and a != -Inf):
         infbounds = 1
         bound = a
-    elif (b == Inf and a == -Inf):
+    elif b == Inf:
         infbounds = 2
         bound = 0     # ignored
-    elif (b != Inf and a == -Inf):
+    else:
         infbounds = -1
         bound = b
-    else:
-        raise RuntimeError("Infinity comparisons don't work for you.")
-
     if points is None:
-        if infbounds == 0:
-            return _quadpack._qagse(func,a,b,args,full_output,epsabs,epsrel,limit)
-        else:
-            return _quadpack._qagie(func,bound,infbounds,args,full_output,epsabs,epsrel,limit)
-    else:
-        if infbounds != 0:
-            raise ValueError("Infinity inputs cannot be used with break points.")
-        else:
-            #Duplicates force function evaluation at singular points
-            the_points = numpy.unique(points)
-            the_points = the_points[a < the_points]
-            the_points = the_points[the_points < b]
-            the_points = numpy.concatenate((the_points, (0., 0.)))
-            return _quadpack._qagpe(func,a,b,the_points,args,full_output,epsabs,epsrel,limit)
+        return (
+            _quadpack._qagse(
+                func, a, b, args, full_output, epsabs, epsrel, limit
+            )
+            if infbounds == 0
+            else _quadpack._qagie(
+                func,
+                bound,
+                infbounds,
+                args,
+                full_output,
+                epsabs,
+                epsrel,
+                limit,
+            )
+        )
+
+    if infbounds != 0:
+        raise ValueError("Infinity inputs cannot be used with break points.")
+    #Duplicates force function evaluation at singular points
+    the_points = numpy.unique(points)
+    the_points = the_points[a < the_points]
+    the_points = the_points[the_points < b]
+    the_points = numpy.concatenate((the_points, (0., 0.)))
+    return _quadpack._qagpe(func,a,b,the_points,args,full_output,epsabs,epsrel,limit)
 
 
 def _quad_weight(func,a,b,args,full_output,epsabs,epsrel,limlst,limit,maxp1,weight,wvar,wopts):
     if weight not in ['cos','sin','alg','alg-loga','alg-logb','alg-log','cauchy']:
-        raise ValueError("%s not a recognized weighting function." % weight)
+        raise ValueError(f"{weight} not a recognized weighting function.")
 
     strdict = {'cos':1,'sin':2,'alg':1,'alg-loga':2,'alg-logb':3,'alg-log':4}
 
     if weight in ['cos','sin']:
         integr = strdict[weight]
         if (b != Inf and a != -Inf):  # finite limits
-            if wopts is None:         # no precomputed Chebyshev moments
+            if wopts is None:
                 return _quadpack._qawoe(func, a, b, wvar, integr, args, full_output,
                                         epsabs, epsrel, limit, maxp1,1)
-            else:                     # precomputed Chebyshev moments
-                momcom = wopts[0]
-                chebcom = wopts[1]
-                return _quadpack._qawoe(func, a, b, wvar, integr, args, full_output,
-                                        epsabs, epsrel, limit, maxp1, 2, momcom, chebcom)
+            momcom = wopts[0]
+            chebcom = wopts[1]
+            return _quadpack._qawoe(func, a, b, wvar, integr, args, full_output,
+                                    epsabs, epsrel, limit, maxp1, 2, momcom, chebcom)
 
         elif (b == Inf and a != -Inf):
             return _quadpack._qawfe(func, a, wvar, integr, args, full_output,
@@ -1174,19 +1180,14 @@ class _NQuad:
                       **opt)
         value = quad_r[0]
         abserr = quad_r[1]
-        if self.full_output:
+        if self.full_output and depth + 1 == self.maxdepth:
             infodict = quad_r[2]
-            # The 'neval' parameter in full_output returns the total
-            # number of times the integrand function was evaluated.
-            # Therefore, only the innermost integration loop counts.
-            if depth + 1 == self.maxdepth:
-                self.out_dict['neval'] += infodict['neval']
+            self.out_dict['neval'] += infodict['neval']
         self.abserr = max(self.abserr, abserr)
         if depth > 0:
             return value
+        # Final result of N-D integration with error
+        if self.full_output:
+            return value, self.abserr, self.out_dict
         else:
-            # Final result of N-D integration with error
-            if self.full_output:
-                return value, self.abserr, self.out_dict
-            else:
-                return value, self.abserr
+            return value, self.abserr

@@ -449,14 +449,13 @@ def kmeans(obs, k_or_guess, iter=20, thresh=1e-5, check_finite=True,
     """
     obs = _asarray_validated(obs, check_finite=check_finite)
     if iter < 1:
-        raise ValueError("iter must be at least 1, got %s" % iter)
+        raise ValueError(f"iter must be at least 1, got {iter}")
 
     # Determine whether a count (scalar) or an initial guess (array) was passed.
     if not np.isscalar(k_or_guess):
         guess = _asarray_validated(k_or_guess, check_finite=check_finite)
         if guess.size < 1:
-            raise ValueError("Asked for 0 clusters. Initial book was %s" %
-                             guess)
+            raise ValueError(f"Asked for 0 clusters. Initial book was {guess}")
         return _kmeans(obs, guess, thresh=thresh)
 
     # k_or_guess is a scalar, now verify that it's an integer
@@ -470,7 +469,7 @@ def kmeans(obs, k_or_guess, iter=20, thresh=1e-5, check_finite=True,
 
     # initialize best distance value to a large value
     best_dist = np.inf
-    for i in range(iter):
+    for _ in range(iter):
         # the initial code book is randomly selected from observations
         guess = _kpoints(obs, k, rng)
         book, dist = _kmeans(obs, guess, thresh=thresh)
@@ -781,7 +780,7 @@ def kmeans2(data, k, iter=10, thresh=1e-5, minit='random',
             rng = check_random_state(seed)
             code_book = init_meth(data, k, rng)
 
-    for i in range(iter):
+    for _ in range(iter):
         # Compute the nearest neighbor for each obs using the current code book
         label = vq(data, code_book)[0]
         # Update the code book by computing centroids

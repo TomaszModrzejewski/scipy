@@ -43,10 +43,9 @@ def _mikota_pair(n):
 def _as2d(ar):
     if ar.ndim == 2:
         return ar
-    else:  # Assume 1!
-        aux = np.array(ar, copy=False)
-        aux.shape = (ar.shape[0], 1)
-        return aux
+    aux = np.array(ar, copy=False)
+    aux.shape = (ar.shape[0], 1)
+    return aux
 
 
 def _precond(LorU, lower, x):

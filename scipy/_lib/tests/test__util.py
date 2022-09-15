@@ -322,10 +322,10 @@ class TestRenameParameter:
         with pytest.raises(TypeError, match=message):
             self.old_keyword_deprecated(10, new=10)
         with pytest.raises(TypeError, match=message), \
-                pytest.warns(DeprecationWarning, match=dep_msg):
+                    pytest.warns(DeprecationWarning, match=dep_msg):
             self.old_keyword_deprecated(10, old=10)
         with pytest.raises(TypeError, match=message), \
-                pytest.warns(DeprecationWarning, match=dep_msg):
+                    pytest.warns(DeprecationWarning, match=dep_msg):
             self.old_keyword_deprecated(new=10, old=10)
 
 

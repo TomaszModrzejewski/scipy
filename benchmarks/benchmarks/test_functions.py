@@ -226,9 +226,12 @@ class Ackley:
     xmax = np.array([5, 5])
 
     def fun(self, x):
-        E = (-20. * exp(-0.2 * sqrt(0.5 * (x[0]**2 + x[1]**2))) + 20. + np.e -
-             exp(0.5 * (cos(2. * pi * x[0]) + cos(2. * pi * x[1]))))
-        return E
+        return (
+            -20.0 * exp(-0.2 * sqrt(0.5 * (x[0] ** 2 + x[1] ** 2)))
+            + 20.0
+            + np.e
+            - exp(0.5 * (cos(2.0 * pi * x[0]) + cos(2.0 * pi * x[1])))
+        )
 
     def der(self, x):
         R = sqrt(x[0]**2 + x[1]**2)
@@ -250,10 +253,11 @@ class Levi:
     xmax = np.array([10, 10])
 
     def fun(self, x):
-        E = (sin(3. * pi * x[0])**2 + (x[0] - 1.)**2 *
-             (1. + sin(3 * pi * x[1])**2) +
-             (x[1] - 1.)**2 * (1. + sin(2 * pi * x[1])**2))
-        return E
+        return (
+            sin(3.0 * pi * x[0]) ** 2
+            + (x[0] - 1.0) ** 2 * (1.0 + sin(3 * pi * x[1]) ** 2)
+            + (x[1] - 1.0) ** 2 * (1.0 + sin(2 * pi * x[1]) ** 2)
+        )
 
     def der(self, x):
 

@@ -60,10 +60,7 @@ class TestODEClass:
 
         # ode has callback arguments in different order than odeint
         f = lambda t, z: problem.f(z, t)
-        jac = None
-        if hasattr(problem, 'jac'):
-            jac = lambda t, z: problem.jac(z, t)
-
+        jac = (lambda t, z: problem.jac(z, t)) if hasattr(problem, 'jac') else None
         integrator_params = {}
         if problem.lband is not None or problem.uband is not None:
             integrator_params['uband'] = problem.uband
@@ -157,7 +154,7 @@ class TestOde(TestODEClass):
     def test_concurrent_ok(self):
         f = lambda t, y: 1.0
 
-        for k in range(3):
+        for _ in range(3):
             for sol in ('vode', 'zvode', 'lsoda', 'dopri5', 'dop853'):
                 r = ode(f).set_integrator(sol)
                 r.set_initial_value(0, 0)
@@ -527,47 +524,35 @@ PROBLEMS = [SimpleOscillator, ComplexExp, Pi, CoupledDecay]
 
 
 def f(t, x):
-    dxdt = [x[1], -x[0]]
-    return dxdt
+    return [x[1], -x[0]]
 
 
 def jac(t, x):
-    j = array([[0.0, 1.0],
-               [-1.0, 0.0]])
-    return j
+    return array([[0.0, 1.0], [-1.0, 0.0]])
 
 
 def f1(t, x, omega):
-    dxdt = [omega*x[1], -omega*x[0]]
-    return dxdt
+    return [omega*x[1], -omega*x[0]]
 
 
 def jac1(t, x, omega):
-    j = array([[0.0, omega],
-               [-omega, 0.0]])
-    return j
+    return array([[0.0, omega], [-omega, 0.0]])
 
 
 def f2(t, x, omega1, omega2):
-    dxdt = [omega1*x[1], -omega2*x[0]]
-    return dxdt
+    return [omega1*x[1], -omega2*x[0]]
 
 
 def jac2(t, x, omega1, omega2):
-    j = array([[0.0, omega1],
-               [-omega2, 0.0]])
-    return j
+    return array([[0.0, omega1], [-omega2, 0.0]])
 
 
 def fv(t, x, omega):
-    dxdt = [omega[0]*x[1], -omega[1]*x[0]]
-    return dxdt
+    return [omega[0]*x[1], -omega[1]*x[0]]
 
 
 def jacv(t, x, omega):
-    j = array([[0.0, omega[0]],
-               [-omega[1], 0.0]])
-    return j
+    return array([[0.0, omega[0]], [-omega[1], 0.0]])
 
 
 class ODECheckParameterUse:

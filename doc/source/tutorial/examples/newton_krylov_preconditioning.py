@@ -33,12 +33,7 @@ def get_preconditioner():
 
     J1_ilu = spilu(J1)
 
-    # This returns an object with a method .solve() that evaluates
-    # the corresponding matrix-vector product. We need to wrap it into
-    # a LinearOperator before it can be passed to the Krylov methods:
-
-    M = LinearOperator(shape=(nx*ny, nx*ny), matvec=J1_ilu.solve)
-    return M
+    return LinearOperator(shape=(nx*ny, nx*ny), matvec=J1_ilu.solve)
 
 def solve(preconditioning=True):
     """Compute the solution"""
@@ -61,11 +56,7 @@ def solve(preconditioning=True):
         return d2x + d2y + 5*cosh(P).mean()**2
 
     # preconditioner
-    if preconditioning:
-        M = get_preconditioner()
-    else:
-        M = None
-
+    M = get_preconditioner() if preconditioning else None
     # solve
     guess = zeros((nx, ny), float)
 

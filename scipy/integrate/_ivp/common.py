@@ -36,8 +36,9 @@ def warn_extraneous(extraneous):
         Extraneous keyword arguments
     """
     if extraneous:
-        warn("The following arguments have no effect for a chosen solver: {}."
-             .format(", ".join("`{}`".format(x) for x in extraneous)))
+        warn(
+            f'The following arguments have no effect for a chosen solver: {", ".join(f"`{x}`" for x in extraneous)}.'
+        )
 
 
 def validate_tol(rtol, atol, n):
@@ -104,11 +105,7 @@ def select_initial_step(fun, t0, y0, f0, direction, order, rtol, atol):
     scale = atol + np.abs(y0) * rtol
     d0 = norm(y0 / scale)
     d1 = norm(f0 / scale)
-    if d0 < 1e-5 or d1 < 1e-5:
-        h0 = 1e-6
-    else:
-        h0 = 0.01 * d0 / d1
-
+    h0 = 1e-6 if d0 < 1e-5 or d1 < 1e-5 else 0.01 * d0 / d1
     y1 = y0 + h0 * direction * f0
     f1 = fun(t0 + h0 * direction, y1)
     d2 = norm((f1 - f0) / scale) / h0
@@ -295,11 +292,7 @@ def num_jac(fun, t, y, f, threshold, factor, sparsity=None):
     if n == 0:
         return np.empty((0, 0)), factor
 
-    if factor is None:
-        factor = np.full(n, EPS ** 0.5)
-    else:
-        factor = factor.copy()
-
+    factor = np.full(n, EPS ** 0.5) if factor is None else factor.copy()
     # Direct the step as ODE dictates, hoping that such a step won't lead to
     # a problematic region. For complex ODEs it makes sense to use the real
     # part of f as we use steps along real axis.
@@ -316,10 +309,9 @@ def num_jac(fun, t, y, f, threshold, factor, sparsity=None):
 
     if sparsity is None:
         return _dense_num_jac(fun, t, y, f, h, factor, y_scale)
-    else:
-        structure, groups = sparsity
-        return _sparse_num_jac(fun, t, y, f, h, factor, y_scale,
-                               structure, groups)
+    structure, groups = sparsity
+    return _sparse_num_jac(fun, t, y, f, h, factor, y_scale,
+                           structure, groups)
 
 
 def _dense_num_jac(fun, t, y, f, h, factor, y_scale):

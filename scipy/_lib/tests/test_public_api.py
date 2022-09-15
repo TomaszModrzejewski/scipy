@@ -20,7 +20,7 @@ def check_dir(module, module_name=None):
         item = getattr(module, name)
         if (hasattr(item, '__module__') and hasattr(item, '__name__')
                 and item.__module__ != module_name):
-            results[name] = item.__module__ + '.' + item.__name__
+            results[name] = f'{item.__module__}.{item.__name__}'
     return results
 
 
@@ -37,46 +37,50 @@ def test_dir_testing():
 # modules that are either public because they were meant to be, or because they
 # contain public functions/objects that aren't present in any other namespace
 # for whatever reason and therefore should be treated as public.
-PUBLIC_MODULES = ["scipy." + s for s in [
-    "cluster",
-    "cluster.vq",
-    "cluster.hierarchy",
-    "constants",
-    "datasets",
-    "fft",
-    "fftpack",
-    "integrate",
-    "interpolate",
-    "io",
-    "io.arff",
-    "io.matlab",
-    "io.wavfile",
-    "linalg",
-    "linalg.blas",
-    "linalg.cython_blas",
-    "linalg.lapack",
-    "linalg.cython_lapack",
-    "linalg.interpolative",
-    "misc",
-    "ndimage",
-    "odr",
-    "optimize",
-    "signal",
-    "signal.windows",
-    "sparse",
-    "sparse.linalg",
-    "sparse.csgraph",
-    "spatial",
-    "spatial.distance",
-    "spatial.transform",
-    "special",
-    "stats",
-    "stats.contingency",
-    "stats.distributions",
-    "stats.mstats",
-    "stats.qmc",
-    "stats.sampling"
-]]
+PUBLIC_MODULES = [
+    f"scipy.{s}"
+    for s in [
+        "cluster",
+        "cluster.vq",
+        "cluster.hierarchy",
+        "constants",
+        "datasets",
+        "fft",
+        "fftpack",
+        "integrate",
+        "interpolate",
+        "io",
+        "io.arff",
+        "io.matlab",
+        "io.wavfile",
+        "linalg",
+        "linalg.blas",
+        "linalg.cython_blas",
+        "linalg.lapack",
+        "linalg.cython_lapack",
+        "linalg.interpolative",
+        "misc",
+        "ndimage",
+        "odr",
+        "optimize",
+        "signal",
+        "signal.windows",
+        "sparse",
+        "sparse.linalg",
+        "sparse.csgraph",
+        "spatial",
+        "spatial.distance",
+        "spatial.transform",
+        "special",
+        "stats",
+        "stats.contingency",
+        "stats.distributions",
+        "stats.mstats",
+        "stats.qmc",
+        "stats.sampling",
+    ]
+]
+
 
 # The PRIVATE_BUT_PRESENT_MODULES list contains modules that look public (lack
 # of underscores) but should not be used.  For many of those modules the
@@ -211,10 +215,7 @@ def is_unexpected(name):
     if name in PUBLIC_MODULES:
         return False
 
-    if name in PRIVATE_BUT_PRESENT_MODULES:
-        return False
-
-    return True
+    return name not in PRIVATE_BUT_PRESENT_MODULES
 
 
 SKIP_LIST = [
@@ -229,17 +230,13 @@ def test_all_modules_are_expected():
     accident.  Check is based on filenames.
     """
 
-    modnames = []
-    for _, modname, ispkg in pkgutil.walk_packages(path=scipy.__path__,
-                                                   prefix=scipy.__name__ + '.',
-                                                   onerror=None):
-        if is_unexpected(modname) and modname not in SKIP_LIST:
-            # We have a name that is new.  If that's on purpose, add it to
-            # PUBLIC_MODULES.  We don't expect to have to add anything to
-            # PRIVATE_BUT_PRESENT_MODULES.  Use an underscore in the name!
-            modnames.append(modname)
-
-    if modnames:
+    if modnames := [
+        modname
+        for _, modname, ispkg in pkgutil.walk_packages(
+            path=scipy.__path__, prefix=f'{scipy.__name__}.', onerror=None
+        )
+        if is_unexpected(modname) and modname not in SKIP_LIST
+    ]:
         raise AssertionError(f'Found unexpected modules: {modnames}')
 
 
@@ -266,17 +263,16 @@ def test_all_modules_are_expected_2():
     def find_unexpected_members(mod_name):
         members = []
         module = importlib.import_module(mod_name)
-        if hasattr(module, '__all__'):
-            objnames = module.__all__
-        else:
-            objnames = dir(module)
-
+        objnames = module.__all__ if hasattr(module, '__all__') else dir(module)
         for objname in objnames:
             if not objname.startswith('_'):
-                fullobjname = mod_name + '.' + objname
-                if isinstance(getattr(module, objname), types.ModuleType):
-                    if is_unexpected(fullobjname) and fullobjname not in SKIP_LIST_2:
-                        members.append(fullobjname)
+                fullobjname = f'{mod_name}.{objname}'
+                if (
+                    isinstance(getattr(module, objname), types.ModuleType)
+                    and is_unexpected(fullobjname)
+                    and fullobjname not in SKIP_LIST_2
+                ):
+                    members.append(fullobjname)
 
         return members
 

@@ -47,11 +47,7 @@ def solve_bdf_system(fun, t_new, y_predict, c, psi, LU, solve_lu, scale, tol):
         dy = solve_lu(LU, c * f - psi - d)
         dy_norm = norm(dy / scale)
 
-        if dy_norm_old is None:
-            rate = None
-        else:
-            rate = dy_norm / dy_norm_old
-
+        rate = None if dy_norm_old is None else dy_norm / dy_norm_old
         if (rate is not None and (rate >= 1 or
                 rate ** (NEWTON_MAXITER - k) / (1 - rate) * dy_norm > tol)):
             break
@@ -462,9 +458,5 @@ class BdfDenseOutput(DenseOutput):
             p = np.cumprod(x, axis=0)
 
         y = np.dot(self.D[1:].T, p)
-        if y.ndim == 1:
-            y += self.D[0]
-        else:
-            y += self.D[0, :, None]
-
+        y += self.D[0] if y.ndim == 1 else self.D[0, :, None]
         return y

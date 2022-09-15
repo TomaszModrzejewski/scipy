@@ -18,10 +18,7 @@ __all__ = ["BSpline", "make_interp_spline", "make_lsq_spline"]
 
 def _get_dtype(dtype):
     """Return np.complex128 for complex dtypes, np.float64 otherwise."""
-    if np.issubdtype(dtype, np.complexfloating):
-        return np.complex_
-    else:
-        return np.float_
+    return np.complex_ if np.issubdtype(dtype, np.complexfloating) else np.float_
 
 
 def _as_float_array(x, check_finite=False):
@@ -43,9 +40,7 @@ def _dual_poly(j, k, t, y):
     polynomial which is associated with B_{j,k,t}:
     $p_{j,k}(y) = (y - t_{j+1})(y - t_{j+2})...(y - t_{j+k})$
     """
-    if k == 0:
-        return 1
-    return np.prod([(y - t[j + i]) for i in range(1, k + 1)])
+    return 1 if k == 0 else np.prod([(y - t[j + i]) for i in range(1, k + 1)])
 
 
 def _diff_dual_poly(j, k, y, d, t):
@@ -57,11 +52,16 @@ def _diff_dual_poly(j, k, y, d, t):
     if d == k:
         return poch(1, k)
     comb = list(combinations(range(j + 1, j + k + 1), d))
-    res = 0
-    for i in range(len(comb) * len(comb[0])):
-        res += np.prod([(y - t[j + p]) for p in range(1, k + 1)
-                        if (j + p) not in comb[i//d]])
-    return res
+    return sum(
+        np.prod(
+            [
+                (y - t[j + p])
+                for p in range(1, k + 1)
+                if (j + p) not in comb[i // d]
+            ]
+        )
+        for i in range(len(comb) * len(comb[0]))
+    )
 
 
 class BSpline:
@@ -441,10 +441,7 @@ class BSpline:
         # the dtype of indices and indptr of the CSR array.
         n = x.shape[0]
         nnz = n * (k + 1)
-        if nnz < np.iinfo(np.int32).max:
-            int_dtype = np.int32
-        else:
-            int_dtype = np.int64
+        int_dtype = np.int32 if nnz < np.iinfo(np.int32).max else np.int64
         # Preallocate indptr and indices
         indices = np.empty(n * (k + 1), dtype=int_dtype)
         indptr = np.arange(0, (n + 1) * (k + 1), k + 1, dtype=int_dtype)
@@ -580,11 +577,7 @@ class BSpline:
             c = np.r_[c, np.zeros((ct,) + c.shape[1:])]
         tck = _fitpack_impl.splantider((self.t, c, self.k), nu)
 
-        if self.extrapolate == 'periodic':
-            extrapolate = False
-        else:
-            extrapolate = self.extrapolate
-
+        extrapolate = False if self.extrapolate == 'periodic' else self.extrapolate
         return self.construct_fast(*tck, extrapolate=extrapolate,
                                    axis=self.axis)
 
@@ -799,33 +792,35 @@ class BSpline:
         """
         from ._cubic import CubicSpline
         if not isinstance(pp, CubicSpline):
-            raise NotImplementedError("Only CubicSpline objects are accepted"
-                                      "for now. Got %s instead." % type(pp))
-        x = pp.x
+            raise NotImplementedError(
+                f"Only CubicSpline objects are acceptedfor now. Got {type(pp)} instead."
+            )
+
         coef = pp.c
         k = pp.c.shape[0] - 1
+        x = pp.x
         n = x.shape[0]
 
         if bc_type == 'not-a-knot':
             t = _not_a_knot(x, k)
-        elif bc_type == 'natural' or bc_type == 'clamped':
+        elif bc_type in ['natural', 'clamped']:
             t = _augknt(x, k)
         elif bc_type == 'periodic':
             t = _periodic_knots(x, k)
         else:
-            raise TypeError('Unknown boundary condition: %s' % bc_type)
+            raise TypeError(f'Unknown boundary condition: {bc_type}')
 
         nod = t.shape[0] - (n + k + 1)  # number of derivatives at the ends
         c = np.zeros(n + nod, dtype=pp.c.dtype)
         for m in range(k + 1):
             for i in range(n - 2):
                 c[i] += poch(k + 1, -m) * coef[m, i]\
-                        * np.power(-1, k - m)\
-                        * _diff_dual_poly(i, k, x[i], m, t)
+                            * np.power(-1, k - m)\
+                            * _diff_dual_poly(i, k, x[i], m, t)
             for j in range(n - 2, n + nod):
                 c[j] += poch(k + 1, -m) * coef[m, n - 2]\
-                        * np.power(-1, k - m)\
-                        * _diff_dual_poly(j, k, x[n - 2], m, t)
+                            * np.power(-1, k - m)\
+                            * _diff_dual_poly(j, k, x[n - 2], m, t)
         return cls.construct_fast(t, c, k, pp.extrapolate, pp.axis)
 
 
@@ -838,7 +833,7 @@ def _not_a_knot(x, k):
     cf de Boor, XIII(12)."""
     x = np.asarray(x)
     if k % 2 != 1:
-        raise ValueError("Odd degree for now only. Got %s." % k)
+        raise ValueError(f"Odd degree for now only. Got {k}.")
 
     m = (k - 1) // 2
     t = x[m+1:-m-1]
@@ -858,7 +853,7 @@ def _convert_string_aliases(deriv, target_shape):
         elif deriv == "natural":
             deriv = [(2, np.zeros(target_shape))]
         else:
-            raise ValueError("Unknown boundary condition : %s" % deriv)
+            raise ValueError(f"Unknown boundary condition : {deriv}")
     return deriv
 
 
@@ -949,15 +944,13 @@ def _woodbury_algorithm(A, ur, ll, b, k):
     # lower left block 
     U[-bs:, -bs:] = ll
     VT[np.arange(bs) - bs, np.arange(bs)] = 1
-    
+
     Z = solve_banded((bs, bs), A, U)
 
     H = solve(np.identity(k_mod) + VT @ Z, np.identity(k_mod))
 
     y = solve_banded((bs, bs), A, b)
-    c = y - Z @ (H @ (VT @ y))
-
-    return c
+    return y - Z @ (H @ (VT @ y))
 
 def _periodic_knots(x, k):
     '''
@@ -967,11 +960,11 @@ def _periodic_knots(x, k):
     n = len(xc)
     if k % 2 == 0:
         dx = np.diff(xc)
-        xc[1: -1] -= dx[:-1] / 2 
+        xc[1: -1] -= dx[:-1] / 2
     dx = np.diff(xc)
     t = np.zeros(n + 2 * k)
     t[k: -k] = xc
-    for i in range(0, k):
+    for i in range(k):
         # filling first `k` elements in descending order
         t[k - i - 1] = t[k - i] - dx[-(i % (n - 1)) - 1]
         # filling last `k` elements in ascending order
@@ -1021,25 +1014,20 @@ def _make_interp_per_full_matr(x, y, t, k):
         matr[i, : k + 1] += bb
         bb = _bspl.evaluate_all_bspl(t, k, x[-1], n + k - 1, nu=i + 1)[:-1]
         matr[i, -k:] -= bb
-    
+
     # collocation matrix
     for i in range(n):
         xval = x[i]
         # find interval
-        if xval == t[k]:
-            left = k
-        else:
-            left = np.searchsorted(t, xval) - 1
-
+        left = k if xval == t[k] else np.searchsorted(t, xval) - 1
         # fill a row
         bb = _bspl.evaluate_all_bspl(t, k, xval, left)
         matr[i + k - 1, left-k:left+1] = bb
-    
+
     # RHS
     b = np.r_[[0] * (k - 1), y]
 
-    c = solve(matr, b)
-    return c
+    return solve(matr, b)
 
 def _make_periodic_spline(x, y, t, k, axis):
     '''
@@ -1269,7 +1257,7 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
         try:
             deriv_l, deriv_r = bc_type
         except TypeError as e:
-            raise ValueError("Unknown boundary condition: %s" % bc_type) from e
+            raise ValueError(f"Unknown boundary condition: {bc_type}") from e
 
     y = np.asarray(y)
 
@@ -1285,8 +1273,7 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
         raise ValueError("First and last points does not match while "
                          "periodic case expected")
     if x.size != y.shape[0]:
-        raise ValueError('Shapes of x {} and y {} are incompatible'
-                         .format(x.shape, y.shape))
+        raise ValueError(f'Shapes of x {x.shape} and y {y.shape} are incompatible')
     if np.any(x[1:] == x[:-1]):
         raise ValueError("Expect x to not have duplicates")
     if x.ndim != 1 or np.any(x[1:] < x[:-1]):
@@ -1304,7 +1291,7 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
 
     # special-case k=1 (e.g., Lyche and Morken, Eq.(2.16))
     if k == 1 and t is None:
-        if not (deriv_l is None and deriv_r is None):
+        if deriv_l is not None or deriv_r is not None:
             raise ValueError("Too much info for k=1: bc_type can only be None.")
         t = np.r_[x[0], x, x[-1]]
         c = np.asarray(y)
@@ -1344,7 +1331,7 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
         raise ValueError('Got %d knots, need at least %d.' %
                          (t.size, x.size + k + 1))
     if (x[0] < t[k]) or (x[-1] > t[-k]):
-        raise ValueError('Out of bounds w/ x = %s.' % x)
+        raise ValueError(f'Out of bounds w/ x = {x}.')
 
     if bc_type == 'periodic':
         return _make_periodic_spline(x, y, t, k, axis)
@@ -1356,15 +1343,16 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
 
     deriv_r = _convert_string_aliases(deriv_r, y.shape[1:])
     deriv_r_ords, deriv_r_vals = _process_deriv_spec(deriv_r)
-    nright = deriv_r_ords.shape[0]
-
     # have `n` conditions for `nt` coefficients; need nt-n derivatives
     n = x.size
     nt = t.size - k - 1
 
+    nright = deriv_r_ords.shape[0]
     if nt - n != nleft + nright:
-        raise ValueError("The number of derivatives at boundaries does not "
-                         "match: expected %s, got %s+%s" % (nt-n, nleft, nright))
+        raise ValueError(
+            f"The number of derivatives at boundaries does not match: expected {nt - n}, got {nleft}+{nright}"
+        )
+
 
     # set up the LHS: the collocation matrix + derivatives at boundaries
     kl = ku = k
@@ -1511,10 +1499,7 @@ def make_lsq_spline(x, y, t, k=3, w=None, axis=0, check_finite=True):
     x = _as_float_array(x, check_finite)
     y = _as_float_array(y, check_finite)
     t = _as_float_array(t, check_finite)
-    if w is not None:
-        w = _as_float_array(w, check_finite)
-    else:
-        w = np.ones_like(x)
+    w = _as_float_array(w, check_finite) if w is not None else np.ones_like(x)
     k = operator.index(k)
 
     axis = normalize_axis_index(axis, y.ndim)
@@ -1530,13 +1515,11 @@ def make_lsq_spline(x, y, t, k=3, w=None, axis=0, check_finite=True):
     if t.ndim != 1 or np.any(t[1:] - t[:-1] < 0):
         raise ValueError("Expect t to be a 1-D sorted array_like.")
     if x.size != y.shape[0]:
-        raise ValueError('Shapes of x {} and y {} are incompatible'
-                         .format(x.shape, y.shape))
+        raise ValueError(f'Shapes of x {x.shape} and y {y.shape} are incompatible')
     if k > 0 and np.any((x < t[k]) | (x > t[-k])):
-        raise ValueError('Out of bounds w/ x = %s.' % x)
+        raise ValueError(f'Out of bounds w/ x = {x}.')
     if x.size != w.size:
-        raise ValueError('Shapes of x {} and w {} are incompatible'
-                         .format(x.shape, w.shape))
+        raise ValueError(f'Shapes of x {x.shape} and w {w.shape} are incompatible')
 
     # number of coefficients
     n = t.size - k - 1

@@ -20,7 +20,7 @@ def try_compile(compiler, code=None, flags=[], ext=None):
     ext = ext or compiler.src_extensions[0]
 
     with tempfile.TemporaryDirectory() as temp_dir:
-        fname = os.path.join(temp_dir, 'main'+ext)
+        fname = os.path.join(temp_dir, f'main{ext}')
         with open(fname, 'w') as f:
             f.write(code)
 

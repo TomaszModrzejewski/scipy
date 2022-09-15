@@ -57,9 +57,8 @@ def _lazywhere(cond, arrays, f, fillvalue=None, f2=None):
             raise ValueError("One of (fillvalue, f2) must be given.")
         else:
             fillvalue = np.nan
-    else:
-        if f2 is not None:
-            raise ValueError("Only one of (fillvalue, f2) can be given.")
+    elif f2 is not None:
+        raise ValueError("Only one of (fillvalue, f2) can be given.")
 
     args = np.broadcast_arrays(cond, *arrays)
     cond, arrays = args[0], args[1:]
@@ -245,17 +244,14 @@ def _asarray_validated(a, check_finite=True,
                    'Perhaps one of the scipy.sparse.linalg functions '
                    'would work instead.')
             raise ValueError(msg)
-    if not mask_ok:
-        if np.ma.isMaskedArray(a):
-            raise ValueError('masked arrays are not supported')
+    if not mask_ok and np.ma.isMaskedArray(a):
+        raise ValueError('masked arrays are not supported')
     toarray = np.asarray_chkfinite if check_finite else np.asarray
     a = toarray(a)
-    if not objects_ok:
-        if a.dtype is np.dtype('O'):
-            raise ValueError('object arrays are not supported')
-    if as_inexact:
-        if not np.issubdtype(a.dtype, np.inexact):
-            a = toarray(a, dtype=np.float_)
+    if not objects_ok and a.dtype is np.dtype('O'):
+        raise ValueError('object arrays are not supported')
+    if as_inexact and not np.issubdtype(a.dtype, np.inexact):
+        a = toarray(a, dtype=np.float_)
     return a
 
 
@@ -493,21 +489,19 @@ def rng_integers(gen, low, high=None, size=None, dtype='int64',
     if isinstance(gen, Generator):
         return gen.integers(low, high=high, size=size, dtype=dtype,
                             endpoint=endpoint)
-    else:
-        if gen is None:
-            # default is RandomState singleton used by np.random.
-            gen = np.random.mtrand._rand
-        if endpoint:
-            # inclusive of endpoint
-            # remember that low and high can be arrays, so don't modify in
-            # place
-            if high is None:
-                return gen.randint(low + 1, size=size, dtype=dtype)
-            if high is not None:
-                return gen.randint(low, high=high + 1, size=size, dtype=dtype)
+    if gen is None:
+        # default is RandomState singleton used by np.random.
+        gen = np.random.mtrand._rand
+    if endpoint:
+        # inclusive of endpoint
+        # remember that low and high can be arrays, so don't modify in
+        # place
+        if high is None:
+            return gen.randint(low + 1, size=size, dtype=dtype)
+        return gen.randint(low, high=high + 1, size=size, dtype=dtype)
 
-        # exclusive
-        return gen.randint(low, high=high, size=size, dtype=dtype)
+    # exclusive
+    return gen.randint(low, high=high, size=size, dtype=dtype)
 
 
 @contextmanager
@@ -631,12 +625,11 @@ def _contains_nan(a, nan_policy='propagate', use_summation=True):
         else:
             contains_nan = np.isnan(a).any()
     elif np.issubdtype(a.dtype, object):
-        contains_nan = False
-        for el in a.ravel():
-            # isnan doesn't work on non-numeric elements
-            if np.issubdtype(type(el), np.number) and np.isnan(el):
-                contains_nan = True
-                break
+        contains_nan = any(
+            np.issubdtype(type(el), np.number) and np.isnan(el)
+            for el in a.ravel()
+        )
+
     else:
         # Only `object` and `inexact` arrays can have NaNs
         contains_nan = False
@@ -706,6 +699,7 @@ def _rng_spawn(rng, n_children):
     # spawns independent RNGs from a parent RNG
     bg = rng._bit_generator
     ss = bg._seed_seq
-    child_rngs = [np.random.Generator(type(bg)(child_ss))
-                  for child_ss in ss.spawn(n_children)]
-    return child_rngs
+    return [
+        np.random.Generator(type(bg)(child_ss))
+        for child_ss in ss.spawn(n_children)
+    ]

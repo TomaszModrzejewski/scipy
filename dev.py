@@ -308,7 +308,7 @@ class Dirs:
         if args.install_prefix:
             self.installed = Path(args.install_prefix).resolve()
         else:
-            self.installed = self.build.parent / (self.build.stem + "-install")
+            self.installed = self.build.parent / f"{self.build.stem}-install"
         # relative path for site-package with py version
         # i.e. 'lib/python3.10/site-packages'
         self.site = self.get_site_packages()
@@ -432,21 +432,28 @@ class Build(Task):
         cmd = ["meson", "setup", dirs.build, "--prefix", dirs.installed]
         build_dir = dirs.build
         run_dir = Path()
-        if build_dir.exists() and not (build_dir / 'meson-info').exists():
-            if list(build_dir.iterdir()):
-                raise RuntimeError("Can't build into non-empty directory "
-                                   f"'{build_dir.absolute()}'")
+        if (
+            build_dir.exists()
+            and not (build_dir / 'meson-info').exists()
+            and list(build_dir.iterdir())
+        ):
+            raise RuntimeError("Can't build into non-empty directory "
+                               f"'{build_dir.absolute()}'")
 
         build_options_file = (
             build_dir / "meson-info" / "intro-buildoptions.json")
         if build_options_file.exists():
             with open(build_options_file) as f:
                 build_options = json.load(f)
-            installdir = None
-            for option in build_options:
-                if option["name"] == "prefix":
-                    installdir = option["value"]
-                    break
+            installdir = next(
+                (
+                    option["value"]
+                    for option in build_options
+                    if option["name"] == "prefix"
+                ),
+                None,
+            )
+
             if installdir != str(dirs.installed):
                 run_dir = build_dir
                 cmd = ["meson", "--reconfigure",
@@ -568,7 +575,7 @@ class Build(Task):
             return result.returncode
 
         openblas_lib_path = Path(result.stdout.strip())
-        if not openblas_lib_path.stem == 'lib':
+        if openblas_lib_path.stem != 'lib':
             raise RuntimeError(
                 f'Expecting "lib" at end of "{openblas_lib_path}"')
 
@@ -595,8 +602,8 @@ class Build(Task):
 
     @classmethod
     def run(cls, add_path=False, **kwargs):
-        kwargs.update(cls.ctx.get(kwargs))
-        Args = namedtuple('Args', [k for k in kwargs.keys()])
+        kwargs |= cls.ctx.get(kwargs)
+        Args = namedtuple('Args', list(kwargs.keys()))
         args = Args(**kwargs)
 
         cls.console = Console(theme=console_theme)
@@ -687,7 +694,7 @@ class Test(Task):
             fn = dst_dir / 'coverage_html.js'
             if dst_dir.is_dir() and fn.is_file():
                 shutil.rmtree(dst_dir)
-            extra_argv += ['--cov-report=html:' + str(dst_dir)]
+            extra_argv += [f'--cov-report=html:{str(dst_dir)}']
             shutil.copyfile(dirs.root / '.coveragerc',
                             dirs.site / '.coveragerc')
 
@@ -696,7 +703,7 @@ class Test(Task):
 
         # convert options to test selection
         if args.submodule:
-            tests = [PROJECT_MODULE + "." + args.submodule]
+            tests = [f"{PROJECT_MODULE}.{args.submodule}"]
         elif args.tests:
             tests = args.tests
         else:
@@ -705,8 +712,10 @@ class Test(Task):
         runner, version, mod_path = get_test_runner(PROJECT_MODULE)
         # FIXME: changing CWD is not a good practice
         with working_dir(dirs.site):
-            print("Running tests for {} version:{}, installed at:{}".format(
-                        PROJECT_MODULE, version, mod_path))
+            print(
+                f"Running tests for {PROJECT_MODULE} version:{version}, installed at:{mod_path}"
+            )
+
             # runner verbosity - convert bool to int
             verbose = int(args.verbose) + 1
             result = runner(  # scipy._lib._testutils:PytestTester
@@ -722,8 +731,8 @@ class Test(Task):
     @classmethod
     def run(cls, pytest_args, **kwargs):
         """run unit-tests"""
-        kwargs.update(cls.ctx.get())
-        Args = namedtuple('Args', [k for k in kwargs.keys()])
+        kwargs |= cls.ctx.get()
+        Args = namedtuple('Args', list(kwargs.keys()))
         args = Args(**kwargs)
         return cls.scipy_tests(args, pytest_args)
 
@@ -774,10 +783,8 @@ class Bench(Task):
 
         # Limit memory usage
         from benchmarks.common import set_mem_rlimit
-        try:
+        with contextlib.suppress(ImportError, RuntimeError):
             set_mem_rlimit()
-        except (ImportError, RuntimeError):
-            pass
         try:
             return subprocess.call(cmd, env=env, cwd=bench_dir)
         except OSError as err:
@@ -807,8 +814,7 @@ class Bench(Task):
             for a in extra_argv:
                 bench_args.extend(['--bench', ' '.join(str(x) for x in a)])
             if not args.compare:
-                print("Running benchmarks for Scipy version %s at %s"
-                      % (version, mod_path))
+                print(f"Running benchmarks for Scipy version {version} at {mod_path}")
                 cmd = ['asv', 'run', '--dry-run', '--show-stderr',
                        '--python=same', '--quick'] + bench_args
                 retval = cls.run_asv(dirs, cmd)
@@ -852,8 +858,8 @@ class Bench(Task):
     @classmethod
     def run(cls, **kwargs):
         """run benchmark"""
-        kwargs.update(cls.ctx.get())
-        Args = namedtuple('Args', [k for k in kwargs.keys()])
+        kwargs |= cls.ctx.get()
+        Args = namedtuple('Args', list(kwargs.keys()))
         args = Args(**kwargs)
         cls.scipy_bench(args)
 
@@ -890,8 +896,8 @@ class Lint():
     output_file = Option(
         ['--output-file'], default=None, help='Redirect report to a file')
 
-    def run(output_file):
-        opts = {'output_file': output_file}
+    def run(self):
+        opts = {'output_file': self}
         run_doit_task({'flake8': opts, 'pep8-diff': {}})
 
 
@@ -906,8 +912,8 @@ class Mypy(Task):
 
     @classmethod
     def run(cls, **kwargs):
-        kwargs.update(cls.ctx.get())
-        Args = namedtuple('Args', [k for k in kwargs.keys()])
+        kwargs |= cls.ctx.get()
+        Args = namedtuple('Args', list(kwargs.keys()))
         args = Args(**kwargs)
         dirs = Dirs(args)
 
@@ -969,8 +975,8 @@ TARGETS: Sphinx build targets [default: 'html']
             task_dep = ['build']
             targets = ' '.join(args) if args else 'html'
 
-        kwargs.update(cls.ctx.get())
-        Args = namedtuple('Args', [k for k in kwargs.keys()])
+        kwargs |= cls.ctx.get()
+        Args = namedtuple('Args', list(kwargs.keys()))
         build_args = Args(**kwargs)
         dirs = Dirs(build_args)
 
@@ -1002,8 +1008,8 @@ class RefguideCheck(Task):
 
     @classmethod
     def task_meta(cls, **kwargs):
-        kwargs.update(cls.ctx.get())
-        Args = namedtuple('Args', [k for k in kwargs.keys()])
+        kwargs |= cls.ctx.get()
+        Args = namedtuple('Args', list(kwargs.keys()))
         args = Args(**kwargs)
         dirs = Dirs(args)
 

@@ -51,10 +51,7 @@ def diff(x,order=1,period=None, _cache=_cache):
         return tmp
     if iscomplexobj(tmp):
         return diff(tmp.real,order,period)+1j*diff(tmp.imag,order,period)
-    if period is not None:
-        c = 2*pi/period
-    else:
-        c = 1.0
+    c = 2*pi/period if period is not None else 1.0
     n = len(x)
     omega = _cache.get((n,order,c))
     if omega is None:
@@ -63,9 +60,8 @@ def diff(x,order=1,period=None, _cache=_cache):
                 _cache.popitem()
 
         def kernel(k,order=order,c=c):
-            if k:
-                return pow(c*k,order)
-            return 0
+            return pow(c*k,order) if k else 0
+
         omega = convolve.init_convolution_kernel(n,kernel,d=order,
                                                  zero_nyquist=1)
         _cache[(n,order,c)] = omega
@@ -132,10 +128,7 @@ def tilbert(x, h, period=None, _cache=_cache):
                 _cache.popitem()
 
         def kernel(k, h=h):
-            if k:
-                return 1.0/tanh(h*k)
-
-            return 0
+            return 1.0/tanh(h*k) if k else 0
 
         omega = convolve.init_convolution_kernel(n, kernel, d=1)
         _cache[(n,h)] = omega
@@ -177,9 +170,8 @@ def itilbert(x,h,period=None, _cache=_cache):
                 _cache.popitem()
 
         def kernel(k,h=h):
-            if k:
-                return -tanh(h*k)
-            return 0
+            return -tanh(h*k) if k else 0
+
         omega = convolve.init_convolution_kernel(n,kernel,d=1)
         _cache[(n,h)] = omega
     overwrite_x = _datacopied(tmp, x)
@@ -318,9 +310,8 @@ def cs_diff(x, a, b, period=None, _cache=_cache):
                 _cache.popitem()
 
         def kernel(k,a=a,b=b):
-            if k:
-                return -cosh(a*k)/sinh(b*k)
-            return 0
+            return -cosh(a*k)/sinh(b*k) if k else 0
+
         omega = convolve.init_convolution_kernel(n,kernel,d=1)
         _cache[(n,a,b)] = omega
     overwrite_x = _datacopied(tmp, x)
@@ -374,9 +365,8 @@ def sc_diff(x, a, b, period=None, _cache=_cache):
                 _cache.popitem()
 
         def kernel(k,a=a,b=b):
-            if k:
-                return sinh(a*k)/cosh(b*k)
-            return 0
+            return sinh(a*k)/cosh(b*k) if k else 0
+
         omega = convolve.init_convolution_kernel(n,kernel,d=1)
         _cache[(n,a,b)] = omega
     overwrite_x = _datacopied(tmp, x)
@@ -429,9 +419,8 @@ def ss_diff(x, a, b, period=None, _cache=_cache):
                 _cache.popitem()
 
         def kernel(k,a=a,b=b):
-            if k:
-                return sinh(a*k)/sinh(b*k)
-            return float(a)/b
+            return sinh(a*k)/sinh(b*k) if k else float(a)/b
+
         omega = convolve.init_convolution_kernel(n,kernel)
         _cache[(n,a,b)] = omega
     overwrite_x = _datacopied(tmp, x)

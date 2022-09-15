@@ -1,4 +1,5 @@
 """Sobol' and Halton sequences."""
+
 from scipy.stats import qmc
 import numpy as np
 
@@ -10,12 +11,9 @@ rng = np.random.default_rng()
 n_sample = 256
 dim = 2
 
-sample = {}
-
 # Sobol'
 engine = qmc.Sobol(d=dim, seed=rng)
-sample["Sobol'"] = engine.random(n_sample)
-
+sample = {"Sobol'": engine.random(n_sample)}
 # Halton
 engine = qmc.Halton(d=dim, seed=rng)
 sample["Halton"] = engine.random(n_sample)

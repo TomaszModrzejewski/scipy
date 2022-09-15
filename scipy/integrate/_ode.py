@@ -751,10 +751,14 @@ class complex_ode(ode):
 # ------------------------------------------------------------------------------
 
 def find_integrator(name):
-    for cl in IntegratorBase.integrator_classes:
-        if re.match(name, cl.__name__, re.I):
-            return cl
-    return None
+    return next(
+        (
+            cl
+            for cl in IntegratorBase.integrator_classes
+            if re.match(name, cl.__name__, re.I)
+        ),
+        None,
+    )
 
 
 class IntegratorConcurrencyError(RuntimeError):
@@ -809,13 +813,15 @@ class IntegratorBase:
 
     def step(self, f, jac, y0, t0, t1, f_params, jac_params):
         """Make one integration step and return (y1,t1)."""
-        raise NotImplementedError('%s does not support step() method' %
-                                  self.__class__.__name__)
+        raise NotImplementedError(
+            f'{self.__class__.__name__} does not support step() method'
+        )
 
     def run_relax(self, f, jac, y0, t0, t1, f_params, jac_params):
         """Integrate from t=t0 to t>=t1 and return (y1,t)."""
-        raise NotImplementedError('%s does not support run_relax() method' %
-                                  self.__class__.__name__)
+        raise NotImplementedError(
+            f'{self.__class__.__name__} does not support run_relax() method'
+        )
 
     # XXX: __str__ method for getting visual state of the integrator
 
@@ -867,7 +873,7 @@ class vode(IntegratorBase):
         elif re.match(method, r'bdf', re.I):
             self.meth = 2
         else:
-            raise ValueError('Unknown integration method %s' % method)
+            raise ValueError(f'Unknown integration method {method}')
         self.with_jacobian = with_jacobian
         self.rtol = rtol
         self.atol = atol
@@ -921,25 +927,13 @@ class vode(IntegratorBase):
 
         # has_jac is True if the user provided a Jacobian function.
         if has_jac:
-            if jac_is_banded:
-                miter = 4
-            else:
-                miter = 1
+            miter = 4 if jac_is_banded else 1
+        elif jac_is_banded:
+            miter = 3 if self.ml == self.mu == 0 else 5
         else:
-            if jac_is_banded:
-                if self.ml == self.mu == 0:
-                    miter = 3  # Chord iteration with internal diagonal Jacobian.
-                else:
-                    miter = 5  # Chord iteration with internal banded Jacobian.
-            else:
                 # self.with_jacobian is set by the user in the call to ode.set_integrator.
-                if self.with_jacobian:
-                    miter = 2  # Chord iteration with internal full Jacobian.
-                else:
-                    miter = 0  # Functional iteraton; no Jacobian involved.
-
-        mf = 10 * self.meth + miter
-        return mf
+            miter = 2 if self.with_jacobian else 0
+        return 10 * self.meth + miter
 
     def reset(self, n, has_jac):
         mf = self._determine_mf_and_set_bands(has_jac)
@@ -961,13 +955,9 @@ class vode(IntegratorBase):
         elif mf in [24, 25]:
             lrw = 22 + 11 * n + (3 * self.ml + 2 * self.mu) * n
         else:
-            raise ValueError('Unexpected mf=%s' % mf)
+            raise ValueError(f'Unexpected mf={mf}')
 
-        if mf % 10 in [0, 3]:
-            liw = 30
-        else:
-            liw = 30 + n
-
+        liw = 30 if mf % 10 in [0, 3] else 30 + n
         rwork = zeros((lrw,), float)
         rwork[4] = self.first_step
         rwork[5] = self.max_step
@@ -1073,11 +1063,7 @@ class zvode(vode):
 
         lrw = 20 + n
 
-        if mf % 10 in (0, 3):
-            liw = 30
-        else:
-            liw = 30 + n
-
+        liw = 30 if mf % 10 in (0, 3) else 30 + n
         zwork = zeros((lzw,), complex)
         self.zwork = zwork
 
@@ -1148,10 +1134,7 @@ class dopri5(IntegratorBase):
     def set_solout(self, solout, complex=False):
         self.solout = solout
         self.solout_cmplx = complex
-        if solout is None:
-            self.iout = 0
-        else:
-            self.iout = 1
+        self.iout = 0 if solout is None else 1
 
     def reset(self, n, has_jac):
         work = zeros((8 * n + 21,), float)
@@ -1294,22 +1277,21 @@ class lsoda(IntegratorBase):
                 if self.ml is None:
                     self.ml = 0
                 jt = 4
+        elif self.mu is None and self.ml is None:
+            jt = 2
         else:
-            if self.mu is None and self.ml is None:
-                jt = 2
-            else:
-                if self.mu is None:
-                    self.mu = 0
-                if self.ml is None:
-                    self.ml = 0
-                jt = 5
+            if self.mu is None:
+                self.mu = 0
+            if self.ml is None:
+                self.ml = 0
+            jt = 5
         lrn = 20 + (self.max_order_ns + 4) * n
-        if jt in [1, 2]:
+        if jt in {1, 2}:
             lrs = 22 + (self.max_order_s + 4) * n + n * n
-        elif jt in [4, 5]:
+        elif jt in {4, 5}:
             lrs = 22 + (self.max_order_s + 5 + 2 * self.ml + self.mu) * n
         else:
-            raise ValueError('Unexpected jt=%s' % jt)
+            raise ValueError(f'Unexpected jt={jt}')
         lrw = max(lrn, lrs)
         liw = 20 + n
         rwork = zeros((lrw,), float)

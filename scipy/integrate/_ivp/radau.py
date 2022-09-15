@@ -376,11 +376,7 @@ class Radau(OdeSolver):
                                  "actually has {}."
                                  .format((self.n, self.n), J.shape))
         else:
-            if issparse(jac):
-                J = csc_matrix(jac)
-            else:
-                J = np.asarray(jac, dtype=float)
-
+            J = csc_matrix(jac) if issparse(jac) else np.asarray(jac, dtype=float)
             if J.shape != (self.n, self.n):
                 raise ValueError("`jac` is expected to have shape {}, but "
                                  "actually has {}."
@@ -557,9 +553,5 @@ class RadauDenseOutput(DenseOutput):
             p = np.cumprod(p, axis=0)
         # Here we don't multiply by h, not a mistake.
         y = np.dot(self.Q, p)
-        if y.ndim == 2:
-            y += self.y_old[:, None]
-        else:
-            y += self.y_old
-
+        y += self.y_old[:, None] if y.ndim == 2 else self.y_old
         return y

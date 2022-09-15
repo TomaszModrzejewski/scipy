@@ -26,18 +26,17 @@ class BenchmarkOneNormEst(Benchmark):
             # skip: slow, and not useful to benchmark
             raise NotImplementedError()
 
+        # Sample the matrices.
+        self.matrices = []
         if n <= 1000:
-            # Sample the matrices.
-            self.matrices = []
-            for i in range(nrepeats):
+            for _ in range(nrepeats):
                 M = rng.standard_normal(shape)
                 self.matrices.append(M)
         else:
             max_nnz = 100000
             nrepeats = 1
 
-            self.matrices = []
-            for i in range(nrepeats):
+            for _ in range(nrepeats):
                 M = scipy.sparse.rand(shape[0], shape[1], min(max_nnz/(shape[0]*shape[1]), 1e-5), random_state=rng)
                 self.matrices.append(M)
 

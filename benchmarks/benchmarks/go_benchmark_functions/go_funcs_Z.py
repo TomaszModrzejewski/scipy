@@ -83,9 +83,7 @@ class ZeroSum(Benchmark):
     def fun(self, x, *args):
         self.nfev += 1
 
-        if abs(sum(x)) < 3e-16:
-            return 0.0
-        return 1.0 + (10000.0 * abs(sum(x))) ** 0.5
+        return 0.0 if abs(sum(x)) < 3e-16 else 1.0 + (10000.0 * abs(sum(x))) ** 0.5
 
 
 class Zettl(Benchmark):
