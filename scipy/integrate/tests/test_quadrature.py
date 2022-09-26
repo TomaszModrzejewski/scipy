@@ -267,9 +267,11 @@ class TestCumulative_trapezoid:
         # Basic coverage test for the alias
         x = np.arange(3 * 2 * 4).reshape(3, 2, 4)
         y = x
-        assert_allclose(cumulative_trapezoid(y, x, dx=0.5, axis=0, initial=0),
-                        cumtrapz(y, x, dx=0.5, axis=0, initial=0),
-                        rtol=1e-14)
+        assert_allclose(
+            cumulative_trapezoid(y, y, dx=0.5, axis=0, initial=0),
+            cumtrapz(y, y, dx=0.5, axis=0, initial=0),
+            rtol=1e-14,
+        )
 
 
 class TestTrapezoid():

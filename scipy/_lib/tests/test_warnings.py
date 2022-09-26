@@ -38,10 +38,11 @@ class FindFuncs(ast.NodeVisitor):
         p.visit(node.func)
         ast.NodeVisitor.generic_visit(self, node)
 
-        if p.ls[-1] == 'simplefilter' or p.ls[-1] == 'filterwarnings':
-            if node.args[0].s == "ignore":
-                self.bad_filters.append(
-                    "{}:{}".format(self.__filename, node.lineno))
+        if (
+            p.ls[-1] in ['simplefilter', 'filterwarnings']
+            and node.args[0].s == "ignore"
+        ):
+            self.bad_filters.append(f"{self.__filename}:{node.lineno}")
 
         if p.ls[-1] == 'warn' and (
                 len(p.ls) == 1 or p.ls[-2] == 'warnings'):
@@ -55,8 +56,7 @@ class FindFuncs(ast.NodeVisitor):
                 return
             args = {kw.arg for kw in node.keywords}
             if "stacklevel" not in args:
-                self.bad_stacklevels.append(
-                    "{}:{}".format(self.__filename, node.lineno))
+                self.bad_stacklevels.append(f"{self.__filename}:{node.lineno}")
 
 
 @pytest.fixture(scope="session")
@@ -99,10 +99,11 @@ def test_warning_calls_filters(warning_calls):
         os.path.join('stats', '_discrete_distns.py'),  # gh-14901
         os.path.join('stats', '_continuous_distns.py'),
     )
-    bad_filters = [item for item in bad_filters if item.split(':')[0] not in
-                   allowed_filters]
-
-    if bad_filters:
+    if bad_filters := [
+        item
+        for item in bad_filters
+        if item.split(':')[0] not in allowed_filters
+    ]:
         raise AssertionError(
             "warning ignore filter should not be used, instead, use\n"
             "numpy.testing.suppress_warnings (in tests only);\n"

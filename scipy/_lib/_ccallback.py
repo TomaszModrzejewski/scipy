@@ -169,12 +169,12 @@ def _get_ctypes_func(func, signature=None):
 
     # Construct function signature
     if signature is None:
-        signature = _typename_from_ctypes(func.restype) + " ("
+        signature = f"{_typename_from_ctypes(func.restype)} ("
         for j, arg in enumerate(func.argtypes):
             if j == 0:
                 signature += _typename_from_ctypes(arg)
             else:
-                signature += ", " + _typename_from_ctypes(arg)
+                signature += f", {_typename_from_ctypes(arg)}"
         signature += ")"
 
     return func_ptr, signature

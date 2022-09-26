@@ -38,9 +38,7 @@ def conv_method(sampler, func, n_samples, n_conv, ref):
 
     evals = [np.sum(func(sample)) / n_samples for sample in samples]
     squared_errors = (ref - np.array(evals)) ** 2
-    rmse = (np.sum(squared_errors) / n_conv) ** 0.5
-
-    return rmse
+    return (np.sum(squared_errors) / n_conv) ** 0.5
 
 
 # Analysis

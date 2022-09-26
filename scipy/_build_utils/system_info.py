@@ -84,18 +84,15 @@ else:
 
         def calc_info(self):
 
-            lapack_mkl_info = get_info('lapack_mkl')
-            if lapack_mkl_info:
+            if lapack_mkl_info := get_info('lapack_mkl'):
                 self.set_info(**lapack_mkl_info)
                 return
 
-            openblas_info = get_info('openblas_lapack')
-            if openblas_info:
+            if openblas_info := get_info('openblas_lapack'):
                 self.set_info(**openblas_info)
                 return
 
-            openblas_info = get_info('openblas_clapack')
-            if openblas_info:
+            if openblas_info := get_info('openblas_clapack'):
                 self.set_info(**openblas_info)
                 return
 
@@ -113,7 +110,7 @@ else:
             if atlas_info:
                 l = atlas_info.get('define_macros', [])
                 if ('ATLAS_WITH_LAPACK_ATLAS', None) in l \
-                       or ('ATLAS_WITHOUT_LAPACK', None) in l:
+                               or ('ATLAS_WITHOUT_LAPACK', None) in l:
                     need_lapack = 1
                 info = atlas_info
 
@@ -124,9 +121,7 @@ else:
                 dict_append(info, define_macros=[('NO_ATLAS_INFO', 1)])
 
             if need_lapack:
-                lapack_info = get_info('lapack')
-                #lapack_info = {} ## uncomment for testing
-                if lapack_info:
+                if lapack_info := get_info('lapack'):
                     dict_append(info, **lapack_info)
                 else:
                     warnings.warn(LapackNotFoundError.__doc__, stacklevel=2)
@@ -137,8 +132,7 @@ else:
                     dict_append(info, libraries=[('flapack_src', lapack_src_info)])
 
             if need_blas:
-                blas_info = get_info('blas')
-                if blas_info:
+                if blas_info := get_info('blas'):
                     dict_append(info, **blas_info)
                 else:
                     warnings.warn(BlasNotFoundError.__doc__, stacklevel=2)
@@ -157,18 +151,15 @@ else:
 
         def calc_info(self):
 
-            blas_mkl_info = get_info('blas_mkl')
-            if blas_mkl_info:
+            if blas_mkl_info := get_info('blas_mkl'):
                 self.set_info(**blas_mkl_info)
                 return
 
-            blis_info = get_info('blis')
-            if blis_info:
+            if blis_info := get_info('blis'):
                 self.set_info(**blis_info)
                 return
 
-            openblas_info = get_info('openblas')
-            if openblas_info:
+            if openblas_info := get_info('openblas'):
                 self.set_info(**openblas_info)
                 return
 
@@ -190,8 +181,7 @@ else:
                 dict_append(info, define_macros=[('NO_ATLAS_INFO', 1)])
 
             if need_blas:
-                blas_info = get_info('blas')
-                if blas_info:
+                if blas_info := get_info('blas'):
                     dict_append(info, **blas_info)
                 else:
                     warnings.warn(BlasNotFoundError.__doc__, stacklevel=2)

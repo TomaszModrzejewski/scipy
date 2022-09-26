@@ -14,11 +14,11 @@ xi, yi = 3.3, 3.7
 
 
 def get_start(cc, order):
-    if order % 1 == 0:
-        start = math.floor(cc) - order // 2
-    else:
-        start = math.floor(cc + 0.5) - order // 2
-    return start
+    return (
+        math.floor(cc) - order // 2
+        if order % 1 == 0
+        else math.floor(cc + 0.5) - order // 2
+    )
 
 
 for ax, order in zip(axes, orders):
@@ -44,8 +44,11 @@ for ax, order in zip(axes, orders):
     yc = np.tile(np.arange(starty, starty + order + 1)[np.newaxis, :],
                  (order + 1, 1)).ravel()
     ax.plot(xc, -yc, 'ko')
-    ax.set_title("Interpolation (order = {})".format(order),
-                 fontdict=dict(size=16, weight='bold'))
+    ax.set_title(
+        f"Interpolation (order = {order})",
+        fontdict=dict(size=16, weight='bold'),
+    )
+
 
     # set limits and ticks for 0, 0 voxel at upper left
     ax.axis('square')

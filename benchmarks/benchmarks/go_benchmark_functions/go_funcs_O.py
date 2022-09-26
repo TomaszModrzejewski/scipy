@@ -55,7 +55,7 @@ class OddSquare(Benchmark):
 
     def fun(self, x, *args):
         self.nfev += 1
-        b = self.a[0: self.N]
+        b = self.a[:self.N]
         d = self.N * max((x - b) ** 2.0)
         h = sum((x - b) ** 2.0)
         return (-exp(-d / (2.0 * pi)) * cos(pi * d)

@@ -10,10 +10,10 @@ def pre_build_hook(build_ext, ext):
     if cc.compiler_type == 'msvc':
         args.append('/EHsc')
     else:
-        # Use pthreads if available
-        has_pthreads = try_compile(cc, code='#include <pthread.h>\n'
-                                   'int main(int argc, char **argv) {}')
-        if has_pthreads:
+        if has_pthreads := try_compile(
+            cc,
+            code='#include <pthread.h>\n' 'int main(int argc, char **argv) {}',
+        ):
             ext.define_macros.append(('POCKETFFT_PTHREADS', None))
             if has_flag(cc, '-pthread'):
                 args.append('-pthread')

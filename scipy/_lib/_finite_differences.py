@@ -62,8 +62,7 @@ def _central_diff_weights(Np, ndiv=1):
     X = x**0.0
     for k in range(1, Np):
         X = hstack([X, x**k])
-    w = prod(arange(1, ndiv + 1), axis=0) * linalg.inv(X)[ndiv]
-    return w
+    return prod(arange(1, ndiv + 1), axis=0) * linalg.inv(X)[ndiv]
 
 
 def _derivative(func, x0, dx=1.0, n=1, args=(), order=3):

@@ -7,16 +7,8 @@ from scipy.integrate import ode
 def _band_count(a):
     """Returns ml and mu, the lower and upper band sizes of a."""
     nrows, ncols = a.shape
-    ml = 0
-    for k in range(-nrows+1, 0):
-        if np.diag(a, k).any():
-            ml = -k
-            break
-    mu = 0
-    for k in range(nrows-1, 0, -1):
-        if np.diag(a, k).any():
-            mu = k
-            break
+    ml = next((-k for k in range(-nrows+1, 0) if np.diag(a, k).any()), 0)
+    mu = next((k for k in range(nrows-1, 0, -1) if np.diag(a, k).any()), 0)
     return ml, mu
 
 
@@ -35,8 +27,7 @@ def _linear_banded_jac(t, y, a):
     ml, mu = _band_count(a)
     bjac = [np.r_[[0] * k, np.diag(a, k)] for k in range(mu, 0, -1)]
     bjac.append(np.diag(a))
-    for k in range(-1, -ml-1, -1):
-        bjac.append(np.r_[np.diag(a, k), [0] * (-k)])
+    bjac.extend(np.r_[np.diag(a, k), [0] * (-k)] for k in range(-1, -ml-1, -1))
     return bjac
 
 
@@ -81,11 +72,7 @@ def _solve_linear_sys(a, y0, tend=1, dt=0.1,
         r = ode(_linear_func)
 
     if solver is None:
-        if np.iscomplexobj(a):
-            solver = "zvode"
-        else:
-            solver = "vode"
-
+        solver = "zvode" if np.iscomplexobj(a) else "vode"
     r.set_integrator(solver,
                      with_jacobian=with_jacobian,
                      method=method,
@@ -120,8 +107,7 @@ def _analytical_solution(a, y0, t):
     lam, v = np.linalg.eig(a)
     c = np.linalg.solve(v, y0)
     e = c * np.exp(lam * t.reshape(-1, 1))
-    sol = e.dot(v.T)
-    return sol
+    return e.dot(v.T)
 
 
 def test_banded_ode_solvers():

@@ -30,10 +30,8 @@ class TestFFT1D:
         x = random(maxlen) + 1j*random(maxlen)
         xr = random(maxlen)
         for i in range(1,maxlen):
-            assert_array_almost_equal(fft.ifft(fft.fft(x[0:i])), x[0:i],
-                                      decimal=12)
-            assert_array_almost_equal(fft.irfft(fft.rfft(xr[0:i]),i),
-                                      xr[0:i], decimal=12)
+            assert_array_almost_equal(fft.ifft(fft.fft(x[:i])), x[:i], decimal=12)
+            assert_array_almost_equal(fft.irfft(fft.rfft(xr[:i]), i), xr[:i], decimal=12)
 
     def test_fft(self):
         x = random(30) + 1j*random(30)
@@ -219,8 +217,11 @@ class TestFFT1D:
         axes = [(0, 1, 2), (0, 2, 1), (1, 2, 0)]
         for a in axes:
             # different shape on the first two axes
-            shape = tuple([2*x.shape[ax] if ax in a[:2] else x.shape[ax]
-                           for ax in range(x.ndim)])
+            shape = tuple(
+                2 * x.shape[ax] if ax in a[:2] else x.shape[ax]
+                for ax in range(x.ndim)
+            )
+
             # transform only the first two axes
             op_tr = op(np.transpose(x, a), s=shape[:2], axes=(0, 1))
             tr_op = np.transpose(op(x, s=shape[:2], axes=a[:2]), a)

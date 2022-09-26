@@ -55,9 +55,7 @@ class Bench(Benchmark):
     def time_solve_triangular(self, size, contig, module):
         # treats self.a as a lower-triangular matrix by ignoring the strictly
         # upper-triangular part
-        if module == 'numpy':
-            pass
-        else:
+        if module != 'numpy':
             sl.solve_triangular(self.a, self.b, lower=True)
 
     def time_inv(self, size, contig, module):

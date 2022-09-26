@@ -34,9 +34,7 @@ class LimitedParamBenchmark(Benchmark):
     num_param_combinations = 0
 
     def setup(self, *args, **kwargs):
-        slow = is_xslow()
-
-        if slow:
+        if slow := is_xslow():
             # no need to skip
             return
 
@@ -93,7 +91,7 @@ def run_monitored(code):
 
         m = re.search(r'VmRSS:\s*(\d+)\s*kB', procdata, re.S | re.I)
         if m is not None:
-            memusage = float(m.group(1)) * 1e3
+            memusage = float(m[1]) * 1e3
             peak_memusage = max(memusage, peak_memusage)
 
         time.sleep(0.01)
@@ -153,7 +151,8 @@ class safe_import:
     def __exit__(self, type_, value, traceback):
         if type_ is not None:
             self.error = True
-            suppress = not (
-                os.getenv('SCIPY_ALLOW_BENCH_IMPORT_ERRORS', '1').lower() in
-                ('0', 'false') or not issubclass(type_, ImportError))
-            return suppress
+            return not (
+                os.getenv('SCIPY_ALLOW_BENCH_IMPORT_ERRORS', '1').lower()
+                in ('0', 'false')
+                or not issubclass(type_, ImportError)
+            )

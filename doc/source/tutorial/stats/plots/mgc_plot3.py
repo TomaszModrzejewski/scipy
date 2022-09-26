@@ -7,7 +7,7 @@ def mgc_plot(x, y, sim_name):
     # simulation
     plt.figure(figsize=(8, 8))
     ax = plt.gca()
-    ax.set_title(sim_name + " Simulation", fontsize=20)
+    ax.set_title(f"{sim_name} Simulation", fontsize=20)
     ax.scatter(x, y)
     ax.set_xlabel('X', fontsize=15)
     ax.set_ylabel('Y', fontsize=15)

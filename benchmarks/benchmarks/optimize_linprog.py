@@ -73,9 +73,8 @@ class MagicSquare(Benchmark):
     param_names = ['method', '(dimensions, objective)']
 
     def setup(self, meth, prob):
-        if not is_xslow():
-            if prob[0] > 4:
-                raise NotImplementedError("skipped")
+        if not is_xslow() and prob[0] > 4:
+            raise NotImplementedError("skipped")
 
         dims, obj = prob
         self.A_eq, self.b_eq, self.c, numbers, _ = magic_square(dims)
@@ -156,8 +155,7 @@ class Netlib(Benchmark):
             raise NotImplementedError("skipped")
 
         dir_path = os.path.dirname(os.path.realpath(__file__))
-        datafile = os.path.join(dir_path, "linprog_benchmark_files",
-                                prob + ".npz")
+        datafile = os.path.join(dir_path, "linprog_benchmark_files", f"{prob}.npz")
         data = np.load(datafile, allow_pickle=True)
         self.c = data["c"]
         self.A_eq = data["A_eq"]
@@ -200,8 +198,10 @@ class Netlib_infeasible(Benchmark):
             raise NotImplementedError("skipped")
 
         dir_path = os.path.dirname(os.path.realpath(__file__))
-        datafile = os.path.join(dir_path, "linprog_benchmark_files",
-                                "infeasible", prob + ".npz")
+        datafile = os.path.join(
+            dir_path, "linprog_benchmark_files", "infeasible", f"{prob}.npz"
+        )
+
         data = np.load(datafile, allow_pickle=True)
         self.c = data["c"]
         self.A_eq = data["A_eq"]

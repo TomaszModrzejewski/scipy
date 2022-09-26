@@ -50,10 +50,7 @@ def docformat(docstring, docdict=None):
         return docstring
     lines = docstring.expandtabs().splitlines()
     # Find the minimum indent of the main docstring, after first line
-    if len(lines) < 2:
-        icount = 0
-    else:
-        icount = indentcount_lines(lines[1:])
+    icount = 0 if len(lines) < 2 else indentcount_lines(lines[1:])
     indent = ' ' * icount
     # Insert this indent to dictionary docstrings
     indented = {}
@@ -61,8 +58,7 @@ def docformat(docstring, docdict=None):
         lines = dstr.expandtabs().splitlines()
         try:
             newlines = [lines[0]]
-            for line in lines[1:]:
-                newlines.append(indent+line)
+            newlines.extend(indent+line for line in lines[1:])
             indented[name] = '\n'.join(newlines)
         except IndexError:
             indented[name] = dstr
@@ -194,12 +190,9 @@ def indentcount_lines(lines):
     '''
     indentno = sys.maxsize
     for line in lines:
-        stripped = line.lstrip()
-        if stripped:
+        if stripped := line.lstrip():
             indentno = min(indentno, len(line) - len(stripped))
-    if indentno == sys.maxsize:
-        return 0
-    return indentno
+    return 0 if indentno == sys.maxsize else indentno
 
 
 def filldoc(docdict, unindent_params=True):
@@ -230,10 +223,7 @@ def filldoc(docdict, unindent_params=True):
 
 def unindent_dict(docdict):
     ''' Unindent all strings in a docdict '''
-    can_dict = {}
-    for name, dstr in docdict.items():
-        can_dict[name] = unindent_string(dstr)
-    return can_dict
+    return {name: unindent_string(dstr) for name, dstr in docdict.items()}
 
 
 def unindent_string(docstring):

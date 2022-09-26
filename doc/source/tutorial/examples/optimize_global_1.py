@@ -14,8 +14,7 @@ y = np.arange(-512, 513)
 xgrid, ygrid = np.meshgrid(x, y)
 xy = np.stack([xgrid, ygrid])
 
-results = dict()
-results['shgo'] = optimize.shgo(eggholder, bounds)
+results = {'shgo': optimize.shgo(eggholder, bounds)}
 results['DA'] = optimize.dual_annealing(eggholder, bounds)
 results['DE'] = optimize.differential_evolution(eggholder, bounds)
 results['shgo_sobol'] = optimize.shgo(eggholder, bounds, n=256, iters=5,

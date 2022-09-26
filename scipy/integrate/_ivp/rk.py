@@ -552,11 +552,7 @@ class RkDenseOutput(DenseOutput):
             p = np.tile(x, (self.order + 1, 1))
             p = np.cumprod(p, axis=0)
         y = self.h * np.dot(self.Q, p)
-        if y.ndim == 2:
-            y += self.y_old[:, None]
-        else:
-            y += self.y_old
-
+        y += self.y_old[:, None] if y.ndim == 2 else self.y_old
         return y
 
 

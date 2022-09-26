@@ -34,11 +34,7 @@ class Reader(object):
            String with lines separated by '\\n'.
 
         """
-        if isinstance(data, list):
-            self._str = data
-        else:
-            self._str = data.split('\n')  # store string as list of lines
-
+        self._str = data if isinstance(data, list) else data.split('\n')
         self.reset()
 
     def __getitem__(self, n):
@@ -48,12 +44,11 @@ class Reader(object):
         self._l = 0  # current line nr
 
     def read(self):
-        if not self.eof():
-            out = self[self._l]
-            self._l += 1
-            return out
-        else:
+        if self.eof():
             return ''
+        out = self[self._l]
+        self._l += 1
+        return out
 
     def seek_next_non_empty_line(self):
         for l in self[self._l:]:  # noqa
@@ -89,10 +84,7 @@ class Reader(object):
         return self.read_to_condition(is_unindented)
 
     def peek(self, n=0):
-        if self._l + n < len(self._str):
-            return self[self._l + n]
-        else:
-            return ''
+        return self[self._l + n] if self._l + n < len(self._str) else ''
 
     def is_empty(self):
         return not ''.join(self._str).strip()
@@ -155,7 +147,7 @@ class NumpyDocString(Mapping):
 
     def __setitem__(self, key, val):
         if key not in self._parsed_data:
-            self._error_location("Unknown section %s" % key, error=False)
+            self._error_location(f"Unknown section {key}", error=False)
         else:
             self._parsed_data[key] = val
 
@@ -223,11 +215,7 @@ class NumpyDocString(Mapping):
             if ' : ' in header:
                 arg_name, arg_type = header.split(' : ')[:2]
             else:
-                if single_element_is_type:
-                    arg_name, arg_type = '', header
-                else:
-                    arg_name, arg_type = header, ''
-
+                arg_name, arg_type = ('', header) if single_element_is_type else (header, '')
             desc = r.read_to_next_unindented_line()
             desc = dedent_lines(desc)
             desc = strip_blank_lines(desc)
@@ -288,7 +276,7 @@ class NumpyDocString(Mapping):
             """Match ':role:`name`' or 'name'."""
             m = self._func_rgx.match(text)
             if not m:
-                raise ParseError("%s is not a item name" % text)
+                raise ParseError(f"{text} is not a item name")
             role = m.group('role')
             name = m.group('name') if role else m.group('name2')
             return name, role, m.end()
@@ -313,9 +301,7 @@ class NumpyDocString(Mapping):
             elif line_match:
                 funcs = []
                 text = line_match.group('allfuncs')
-                while True:
-                    if not text.strip():
-                        break
+                while True and text.strip():
                     name, role, match_end = parse_item_name(text)
                     funcs.append((name, role))
                     text = text[match_end:].strip()
@@ -324,7 +310,7 @@ class NumpyDocString(Mapping):
                 rest = list(filter(None, [description]))
                 items.append((funcs, rest))
             else:
-                raise ParseError("%s is not a item name" % line)
+                raise ParseError(f"{line} is not a item name")
         return items
 
     def _parse_index(self, section, content):
@@ -373,7 +359,7 @@ class NumpyDocString(Mapping):
         self._parse_summary()
 
         sections = list(self._read_sections())
-        section_names = set([section for section, content in sections])
+        section_names = {section for section, content in sections}
 
         has_returns = 'Returns' in section_names
         has_yields = 'Yields' in section_names
@@ -390,8 +376,7 @@ class NumpyDocString(Mapping):
                 section = (s.capitalize() for s in section.split(' '))
                 section = ' '.join(section)
                 if self.get(section):
-                    self._error_location("The section %s appears twice"
-                                         % section)
+                    self._error_location(f"The section {section} appears twice")
 
             if section in ('Parameters', 'Other Parameters', 'Attributes',
                            'Methods'):
@@ -414,8 +399,7 @@ class NumpyDocString(Mapping):
                 filename = inspect.getsourcefile(self._obj)
             except TypeError:
                 filename = None
-            msg = msg + (" in the docstring of %s in %s."
-                         % (self._obj, filename))
+            msg = f"{msg} in the docstring of {self._obj} in {filename}."
         if error:
             raise ValueError(msg)
         else:
@@ -427,10 +411,7 @@ class NumpyDocString(Mapping):
         return [name, len(name)*symbol]
 
     def _str_indent(self, doc, indent=4):
-        out = []
-        for line in doc:
-            out += [' '*indent + line]
-        return out
+        return [' '*indent + line for line in doc]
 
     def _str_signature(self):
         if self['Signature']:
@@ -439,16 +420,10 @@ class NumpyDocString(Mapping):
             return ['']
 
     def _str_summary(self):
-        if self['Summary']:
-            return self['Summary'] + ['']
-        else:
-            return []
+        return self['Summary'] + [''] if self['Summary'] else []
 
     def _str_extended_summary(self):
-        if self['Extended Summary']:
-            return self['Extended Summary'] + ['']
-        else:
-            return []
+        return self['Extended Summary'] + [''] if self['Extended Summary'] else []
 
     def _str_param_list(self, name):
         out = []
@@ -486,11 +461,11 @@ class NumpyDocString(Mapping):
             links = []
             for func, role in funcs:
                 if role:
-                    link = ':%s:`%s`' % (role, func)
+                    link = f':{role}:`{func}`'
                 elif func_role:
-                    link = ':%s:`%s`' % (func_role, func)
+                    link = f':{func_role}:`{func}`'
                 else:
-                    link = "`%s`_" % func
+                    link = f"`{func}`_"
                 links.append(link)
             link = ', '.join(links)
             out += [link]
@@ -513,16 +488,13 @@ class NumpyDocString(Mapping):
         default_index = idx.get('default', '')
         if default_index:
             output_index = True
-        out += ['.. index:: %s' % default_index]
+        out += [f'.. index:: {default_index}']
         for section, references in idx.items():
             if section == 'default':
                 continue
             output_index = True
-            out += ['   :%s: %s' % (section, ', '.join(references))]
-        if output_index:
-            return out
-        else:
-            return ''
+            out += [f"   :{section}: {', '.join(references)}"]
+        return out if output_index else ''
 
     def __str__(self, func_role=''):
         out = []
@@ -588,7 +560,7 @@ class FunctionDoc(NumpyDocString):
 
         if self._role:
             if self._role not in roles:
-                print("Warning: invalid role %s" % self._role)
+                print(f"Warning: invalid role {self._role}")
             out += '.. %s:: %s\n    \n\n' % (roles.get(self._role, ''),
                                              func_name)
 
@@ -632,10 +604,8 @@ class ClassDoc(NumpyDocString):
 
         if config.get('show_class_members', True) and _exclude is not ALL:
             def splitlines_x(s):
-                if not s:
-                    return []
-                else:
-                    return s.splitlines()
+                return s.splitlines() if s else []
+
             for field, items in [('Methods', self.methods),
                                  ('Attributes', self.properties)]:
                 if not self[field]:
@@ -673,8 +643,4 @@ class ClassDoc(NumpyDocString):
                     and self._is_show_member(name))]
 
     def _is_show_member(self, name):
-        if self.show_inherited_members:
-            return True  # show all class members
-        if name not in self._cls.__dict__:
-            return False  # class member is inherited, we do not show it
-        return True
+        return True if self.show_inherited_members else name in self._cls.__dict__

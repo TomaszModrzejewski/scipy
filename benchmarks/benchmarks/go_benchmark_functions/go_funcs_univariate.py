@@ -606,10 +606,7 @@ class Problem18(Benchmark):
 
         x = x[0]
 
-        if x <= 3:
-            return (x - 2.0) ** 2.0
-
-        return 2 * log(x - 2.0) + 1
+        return (x - 2.0) ** 2.0 if x <= 3 else 2 * log(x - 2.0) + 1
 
 
 class Problem20(Benchmark):

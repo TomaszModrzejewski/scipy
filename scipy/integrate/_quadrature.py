@@ -81,7 +81,7 @@ def _cached_roots_legendre(n):
     return _cached_roots_legendre.cache[n]
 
 
-_cached_roots_legendre.cache = dict()
+_cached_roots_legendre.cache = {}
 
 
 def fixed_quad(func, a, b, args=(), n=5):
@@ -720,8 +720,7 @@ def _difftrap(function, interval, numtraps):
         h = float(interval[1]-interval[0])/numtosum
         lox = interval[0] + 0.5 * h
         points = lox + h * np.arange(numtosum)
-        s = np.sum(function(points), axis=0)
-        return s
+        return np.sum(function(points), axis=0)
 
 
 def _romberg_diff(b, c, k):
@@ -851,8 +850,7 @@ def romberg(function, a, b, args=(), tol=1.48e-8, rtol=1.48e-8, show=False,
         n *= 2
         ordsum += _difftrap(vfunc, interval, n)
         row = [intrange * ordsum / n]
-        for k in range(i):
-            row.append(_romberg_diff(last_row[k], row[k], k+1))
+        row.extend(_romberg_diff(last_row[k], row[k], k+1) for k in range(i))
         result = row[i]
         lastresult = last_row[i-1]
         if show:
@@ -1022,7 +1020,7 @@ def newton_cotes(rn, equal=0):
     C = ti ** nvec[:, np.newaxis]
     Cinv = np.linalg.inv(C)
     # improve precision of result
-    for i in range(2):
+    for _ in range(2):
         Cinv = 2*Cinv - Cinv.dot(C).dot(Cinv)
     vec = 2.0 / (nvec[::2]+1)
     ai = Cinv[:, ::2].dot(vec) * (N / 2.)

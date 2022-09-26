@@ -25,11 +25,11 @@ def pytest_configure(config):
 
 
 def _get_mark(item, name):
-    if _pep440.parse(pytest.__version__) >= _pep440.Version("3.6.0"):
-        mark = item.get_closest_marker(name)
-    else:
-        mark = item.get_marker(name)
-    return mark
+    return (
+        item.get_closest_marker(name)
+        if _pep440.parse(pytest.__version__) >= _pep440.Version("3.6.0")
+        else item.get_marker(name)
+    )
 
 
 def pytest_runtest_setup(item):
@@ -43,7 +43,7 @@ def pytest_runtest_setup(item):
             pytest.skip("very slow test; set environment variable SCIPY_XSLOW=1 to run it")
     mark = _get_mark(item, 'xfail_on_32bit')
     if mark is not None and np.intp(0).itemsize < 8:
-        pytest.xfail('Fails on our 32-bit test platform(s): %s' % (mark.args[0],))
+        pytest.xfail(f'Fails on our 32-bit test platform(s): {mark.args[0]}')
 
     # Older versions of threadpoolctl have an issue that may lead to this
     # warning being emitted, see gh-14441

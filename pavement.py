@@ -17,6 +17,7 @@ which can be uploaded to Github Releases.
 
 """
 
+
 import os
 import sys
 import subprocess
@@ -27,8 +28,8 @@ from hashlib import sha256
 
 try:
     from paver.tasks import VERSION as _PVER
-    if not _PVER >= '1.0':
-        raise RuntimeError("paver version >= 1.0 required (was %s)" % _PVER)
+    if _PVER < '1.0':
+        raise RuntimeError(f"paver version >= 1.0 required (was {_PVER})")
 except ImportError as e:
     raise RuntimeError("paver version >= 1.0 required") from e
 
@@ -53,7 +54,7 @@ try:
         if GIT_REVISION == "Unknown":
             FULLVERSION += '.dev0+Unknown'
         else:
-            FULLVERSION += '.dev0+' + GIT_REVISION[:7]
+            FULLVERSION += f'.dev0+{GIT_REVISION[:7]}'
 finally:
     sys.path.pop(1)
     sys.path.pop(0)
@@ -119,16 +120,16 @@ def html(options):
 
 
 def tarball_name(type_name='gztar'):
-    root = 'scipy-%s' % FULLVERSION
+    root = f'scipy-{FULLVERSION}'
     if type_name == 'gztar':
-        return root + '.tar.gz'
-    elif type_name == 'xztar':
-        return root + '.tar.xz'
+        return f'{root}.tar.gz'
     elif type_name == 'tar':
-        return root + '.tar'
+        return f'{root}.tar'
+    elif type_name == 'xztar':
+        return f'{root}.tar.xz'
     elif type_name == 'zip':
-        return root + '.zip'
-    raise ValueError("Unknown type %s" % type_name)
+        return f'{root}.zip'
+    raise ValueError(f"Unknown type {type_name}")
 
 @task
 def sdist():
@@ -149,7 +150,7 @@ def sdist():
     sh('python setup.py sdist --formats=tar')
     if os.path.exists(os.path.join('dist', tarball_name("xztar"))):
         os.unlink(os.path.join('dist', tarball_name("xztar")))
-    sh('xz %s' % os.path.join('dist', tarball_name("tar")), ignore_error=True)
+    sh(f"""xz {os.path.join('dist', tarball_name("tar"))}""", ignore_error=True)
 
     # Copy the sdists into installers dir
     if not os.path.exists(options.installers.installersdir):
@@ -190,7 +191,7 @@ def compute_md5(idirs):
     for fn in sorted(released):
         with open(fn, 'rb') as f:
             m = md5(f.read())
-        checksums.append('%s  %s' % (m.hexdigest(), os.path.basename(fn)))
+        checksums.append(f'{m.hexdigest()}  {os.path.basename(fn)}')
 
     return checksums
 
@@ -202,7 +203,7 @@ def compute_sha256(idirs):
     for fn in sorted(released):
         with open(fn, 'rb') as f:
             m = sha256(f.read())
-        checksums.append('%s  %s' % (m.hexdigest(), os.path.basename(fn)))
+        checksums.append(f'{m.hexdigest()}  {os.path.basename(fn)}')
 
     return checksums
 
@@ -213,7 +214,7 @@ def write_release_task(options, filename='NOTES.txt'):
     if target.exists():
         target.remove()
 
-    tmp_target = paver.path.path(filename + '.tmp')
+    tmp_target = paver.path.path(f'{filename}.tmp')
     source.copy(tmp_target)
 
     with open(str(tmp_target), 'a') as ftarget:
@@ -240,14 +241,15 @@ SHA256
         cmd += ['--default-key', options.gpg_key]
     cmd += ['--output', str(target), str(tmp_target)]
     subprocess.check_call(cmd)
-    print("signed %s" % (target,))
+    print(f"signed {target}")
     tmp_target.remove()
 
 
 def write_log_task(filename='Changelog'):
     st = subprocess.Popen(
-            ['git', 'log',  '%s..%s' % (LOG_START, LOG_END)],
-            stdout=subprocess.PIPE)
+        ['git', 'log', f'{LOG_START}..{LOG_END}'], stdout=subprocess.PIPE
+    )
+
 
     out = st.communicate()[0].decode()
     with open(filename, 'w') as a:

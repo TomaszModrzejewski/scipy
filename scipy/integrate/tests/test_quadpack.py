@@ -86,7 +86,7 @@ class TestCtypesQuad:
         legacy_only_sigs = [sin_4]
 
         # LowLevelCallables work for new signatures
-        for j, func in enumerate(all_sigs):
+        for func in all_sigs:
             callback = LowLevelCallable(func)
             if func in legacy_only_sigs:
                 pytest.raises(ValueError, quad, callback, 0, pi)
@@ -94,7 +94,7 @@ class TestCtypesQuad:
                 assert_allclose(quad(callback, 0, pi)[0], 2.0)
 
         # Plain ctypes items work only for legacy signatures
-        for j, func in enumerate(legacy_sigs):
+        for func in legacy_sigs:
             if func in legacy_sigs:
                 assert_allclose(quad(func, 0, pi)[0], 2.0)
             else:

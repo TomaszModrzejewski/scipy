@@ -19,7 +19,12 @@ def get_fcompiler_ilp64_flags():
     Dictionary of compiler flags for switching to 8-byte default integer
     size.
     """
-    flags = {
+    # No support for this:
+    # - g77
+    # - hpux
+    # Unknown:
+    # - vast
+    return {
         'absoft': ['-i8'],  # Absoft
         'compaq': ['-i8'],  # Compaq Fortran
         'compaqv': ['/integer_size:64'],  # Compaq Visual Fortran
@@ -41,12 +46,6 @@ def get_fcompiler_ilp64_flags():
         'flang': ['-i8'],  # Portland Group Fortran LLVM Compiler
         'sun': ['-i8'],  # Sun or Forte Fortran 95 Compiler
     }
-    # No support for this:
-    # - g77
-    # - hpux
-    # Unknown:
-    # - vast
-    return flags
 
 
 def get_fcompiler_macro_include_flags(path):
@@ -55,42 +54,41 @@ def get_fcompiler_macro_include_flags(path):
     an #include search path, and safety options necessary for macro
     expansion.
     """
-    intel_opts = ['-fpp', '-I' + path]
-    nag_opts = ['-fpp', '-I' + path]
+    intel_opts = ['-fpp', f'-I{path}']
+    nag_opts = ['-fpp', f'-I{path}']
 
-    flags = {
-        'absoft': ['-W132', '-cpp', '-I' + path],
-        'gnu95': ['-cpp', '-ffree-line-length-none',
-                  '-ffixed-line-length-none', '-I' + path],
+    # No support for this:
+    # - ibm (line length option turns on fixed format)
+    # TODO:
+    # - pg
+    return {
+        'absoft': ['-W132', '-cpp', f'-I{path}'],
+        'gnu95': [
+            '-cpp',
+            '-ffree-line-length-none',
+            '-ffixed-line-length-none',
+            f'-I{path}',
+        ],
         'intel': intel_opts,
         'intele': intel_opts,
         'intelem': intel_opts,
         'intelv': intel_opts,
         'intelev': intel_opts,
         'intelvem': intel_opts,
-        'lahey': ['-Cpp', '--wide', '-I' + path],
-        'mips': ['-col120', '-I' + path],
+        'lahey': ['-Cpp', '--wide', f'-I{path}'],
+        'mips': ['-col120', f'-I{path}'],
         'nag': nag_opts,
         'nagfor': nag_opts,
-        'pathf95': ['-ftpp', '-macro-expand', '-I' + path],
-        'flang': ['-Mpreprocess', '-Mextend', '-I' + path],
-        'sun': ['-fpp', '-I' + path],
+        'pathf95': ['-ftpp', '-macro-expand', f'-I{path}'],
+        'flang': ['-Mpreprocess', '-Mextend', f'-I{path}'],
+        'sun': ['-fpp', f'-I{path}'],
     }
-    # No support for this:
-    # - ibm (line length option turns on fixed format)
-    # TODO:
-    # - pg
-    return flags
 
 
 def uses_mkl(info):
     r_mkl = re.compile("mkl")
     libraries = info.get('libraries', '')
-    for library in libraries:
-        if r_mkl.search(library):
-            return True
-
-    return False
+    return any(r_mkl.search(library) for library in libraries)
 
 
 def needs_g77_abi_wrapper(info):
@@ -149,7 +147,7 @@ def gfortran_legacy_flag_hook(cmd, ext):
 
 def _get_build_src_dir():
     plat_specifier = ".{}-{}.{}".format(get_platform(), *sys.version_info[:2])
-    return os.path.join('build', 'src' + plat_specifier)
+    return os.path.join('build', f'src{plat_specifier}')
 
 
 def get_f2py_int64_options():
@@ -294,16 +292,13 @@ def generic_pre_build_hook(cmd, ext, fcompiler_flags, patch_source_func=None,
         # build_clib doesn't have separate f77/f90 compilers
         f77 = cmd._f_compiler
         f90 = cmd._f_compiler
-    else:
-        f77 = cmd._f77_compiler
-        f90 = cmd._f90_compiler
-
-    # Add compiler flags
-    if is_clib:
         f77_args = build_info.setdefault('extra_f77_compile_args', [])
         f90_args = build_info.setdefault('extra_f90_compile_args', [])
         compilers = [(f77, f77_args), (f90, f90_args)]
     else:
+        f77 = cmd._f77_compiler
+        f90 = cmd._f90_compiler
+
         compilers = [(f77, ext.extra_f77_compile_args),
                      (f90, ext.extra_f90_compile_args)]
 
@@ -427,9 +422,8 @@ def get_blas_lapack_symbols():
     for fn in ['cython_blas_signatures.txt', 'cython_lapack_signatures.txt']:
         with open(os.path.join(srcdir, fn), 'r') as f:
             for line in f:
-                m = re.match(r"^\s*[a-z]+\s+([a-z0-9]+)\(", line)
-                if m:
-                    symbols.append(m.group(1))
+                if m := re.match(r"^\s*[a-z]+\s+([a-z0-9]+)\(", line):
+                    symbols.append(m[1])
 
     # Get the rest from the generator script
     # (we cannot import it directly here, so use exec)

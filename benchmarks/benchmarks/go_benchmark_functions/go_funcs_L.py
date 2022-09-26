@@ -143,8 +143,8 @@ class LennardJones(Benchmark):
         s = 0.0
 
         for i in range(k - 1):
+            a = 3 * i
             for j in range(i + 1, k):
-                a = 3 * i
                 b = 3 * j
                 xd = x[a] - x[b]
                 yd = x[a + 1] - x[b + 1]

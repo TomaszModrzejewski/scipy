@@ -87,14 +87,10 @@ def fun_medazko(t, y):
 
 
 def medazko_sparsity(n):
-    cols = []
-    rows = []
-
     i = np.arange(n) * 2
 
-    cols.append(i[1:])
-    rows.append(i[1:] - 2)
-
+    cols = [i[1:]]
+    rows = [i[1:] - 2]
     cols.append(i)
     rows.append(i)
 
@@ -151,11 +147,7 @@ def test_integration():
             [[5, 9], [5, 1]],
             [None, jac_rational, jac_rational_sparse]):
 
-        if vectorized:
-            fun = fun_rational_vectorized
-        else:
-            fun = fun_rational
-
+        fun = fun_rational_vectorized if vectorized else fun_rational
         with suppress_warnings() as sup:
             sup.filter(UserWarning,
                        "The following arguments have no effect for a chosen "
@@ -779,12 +771,10 @@ def test_classes():
         if cls is not LSODA:
             assert_(solver.nfev > 0)
             assert_(solver.njev >= 0)
-            assert_equal(solver.nlu, 0)
         else:
             assert_equal(solver.nfev, 0)
             assert_equal(solver.njev, 0)
-            assert_equal(solver.nlu, 0)
-
+        assert_equal(solver.nlu, 0)
         assert_raises(RuntimeError, solver.dense_output)
 
         message = solver.step()

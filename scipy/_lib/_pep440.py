@@ -156,10 +156,11 @@ class _BaseVersion:
         return self._compare(other, lambda s, o: s != o)
 
     def _compare(self, other, method):
-        if not isinstance(other, _BaseVersion):
-            return NotImplemented
-
-        return method(self._key, other._key)
+        return (
+            method(self._key, other._key)
+            if isinstance(other, _BaseVersion)
+            else NotImplemented
+        )
 
 
 class LegacyVersion(_BaseVersion):
@@ -215,7 +216,7 @@ def _parse_version_parts(s):
             # pad for numeric comparison
             yield part.zfill(8)
         else:
-            yield "*" + part
+            yield f"*{part}"
 
     # ensure that alpha/beta/candidate are before final
     yield "*final"
@@ -412,7 +413,7 @@ def _parse_letter_version(letter, number):
             letter = "post"
 
         return letter, int(number)
-    if not letter and number:
+    if number:
         # We assume that if we are given a number but not given a letter,
         # then this is using the implicit post release syntax (e.g., 1.0-1)
         letter = "post"
@@ -429,7 +430,7 @@ def _parse_local_version(local):
     """
     if local is not None:
         return tuple(
-            part.lower() if not part.isdigit() else int(part)
+            int(part) if part.isdigit() else part.lower()
             for part in _local_version_seperators.split(local)
         )
 
@@ -453,13 +454,8 @@ def _cmpkey(epoch, release, pre, post, dev, local):
     # We'll do this by abusing the pre-segment, but we _only_ want to do this
     # if there is no pre- or a post-segment. If we have one of those, then
     # the normal sorting rules will handle this case correctly.
-    if pre is None and post is None and dev is not None:
-        pre = -Infinity
-    # Versions without a pre-release (except as noted above) should sort after
-    # those with one.
-    elif pre is None:
-        pre = Infinity
-
+    if pre is None:
+        pre = -Infinity if post is None and dev is not None else Infinity
     # Versions without a post-segment should sort before those with one.
     if post is None:
         post = -Infinity

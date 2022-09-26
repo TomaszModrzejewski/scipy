@@ -1538,16 +1538,17 @@ _current_constants = _physical_constants_2018
 _current_codata = "CODATA 2018"
 
 # check obsolete values
-_obsolete_constants = {}
-for k in physical_constants:
-    if k not in _current_constants:
-        _obsolete_constants[k] = True
+_obsolete_constants = {
+    k: True for k in physical_constants if k not in _current_constants
+}
 
 # generate some additional aliases
-_aliases = {}
-for k in _physical_constants_2002:
-    if 'magn.' in k:
-        _aliases[k] = k.replace('magn.', 'mag.')
+_aliases = {
+    k: k.replace('magn.', 'mag.')
+    for k in _physical_constants_2002
+    if 'magn.' in k
+}
+
 for k in _physical_constants_2006:
     if 'momentum' in k:
         _aliases[k] = k.replace('momentum', 'mom.um')
@@ -1700,12 +1701,11 @@ def find(sub: str | None = None, disp: bool = False) -> Any:
                   if sub.lower() in key.lower()]
 
     result.sort()
-    if disp:
-        for key in result:
-            print(key)
-        return
-    else:
+    if not disp:
         return result
+    for key in result:
+        print(key)
+    return
 
 
 c = value('speed of light in vacuum')

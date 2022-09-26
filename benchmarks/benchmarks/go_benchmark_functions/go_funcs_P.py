@@ -449,8 +449,8 @@ class Pinter(Benchmark):
         xx[1: - 1] = x
         xx[0] = x[-1]
         xx[-1] = x[0]
-        A = xx[0: -2] * sin(xx[1: - 1]) + sin(xx[2:])
-        B = xx[0: -2] ** 2 - 2 * xx[1: - 1] + 3 * xx[2:] - cos(xx[1: - 1]) + 1
+        A = xx[:-2] * sin(xx[1: - 1]) + sin(xx[2:])
+        B = xx[:-2]**2 - 2 * xx[1: - 1] + 3 * xx[2:] - cos(xx[1: - 1]) + 1
         return (sum(i * x ** 2)
                 + sum(20 * i * sin(A) ** 2)
                 + sum(i * log10(1 + i * B ** 2)))

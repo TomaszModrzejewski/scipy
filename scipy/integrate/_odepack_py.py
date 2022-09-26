@@ -244,7 +244,8 @@ def odeint(func, y0, t, args=(), Dfun=None, col_deriv=0, full_output=0,
                              ixpr, mxstep, mxhnil, mxordn, mxords,
                              int(bool(tfirst)))
     if output[-1] < 0:
-        warning_msg = _msgs[output[-1]] + " Run with full_output = 1 to get quantitative information."
+        warning_msg = f"{_msgs[output[-1]]} Run with full_output = 1 to get quantitative information."
+
         warnings.warn(warning_msg, ODEintWarning)
     elif printmessg:
         warning_msg = _msgs[output[-1]]
@@ -254,7 +255,4 @@ def odeint(func, y0, t, args=(), Dfun=None, col_deriv=0, full_output=0,
         output[1]['message'] = _msgs[output[-1]]
 
     output = output[:-1]
-    if len(output) == 1:
-        return output[0]
-    else:
-        return output
+    return output[0] if len(output) == 1 else output

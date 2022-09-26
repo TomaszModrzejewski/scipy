@@ -307,8 +307,7 @@ class TrackContinuousRoundtrip(Benchmark):
         ppf = self.dist.ppf(v, *self.shape_args)
         round_trip = self.dist.cdf(ppf, *self.shape_args)
 
-        err_abs = np.abs(v - round_trip)
-        return err_abs
+        return np.abs(v - round_trip)
 
     def track_distribution_isf_roundtrip(self, dist_name):
         # Tracks the worst relative error of a
@@ -328,8 +327,7 @@ class TrackContinuousRoundtrip(Benchmark):
         ppf = self.dist.isf(v, *self.shape_args)
         round_trip = self.dist.sf(ppf, *self.shape_args)
 
-        err_abs = np.abs(v - round_trip)
-        return err_abs
+        return np.abs(v - round_trip)
 
 
 class PDFPeakMemory(Benchmark):
@@ -519,7 +517,7 @@ class ContinuousFitAnalyticalMLEOverride(Benchmark):
 
     def setup(self, dist_name, case, loc_fixed, scale_fixed,
               shape1_fixed, shape2_fixed, shape3_fixed):
-        self.distn = eval("stats." + dist_name)
+        self.distn = eval(f"stats.{dist_name}")
 
         # default `loc` and `scale` are .834 and 4.342, and shapes are from
         # `_distr_params.py`. If there are multiple cases of valid shapes in

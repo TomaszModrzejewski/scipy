@@ -111,10 +111,7 @@ def handle_events(sol, events, active_events, is_terminal, t_old, t):
     roots = np.asarray(roots)
 
     if np.any(is_terminal[active_events]):
-        if t > t_old:
-            order = np.argsort(roots)
-        else:
-            order = np.argsort(-roots)
+        order = np.argsort(roots) if t > t_old else np.argsort(-roots)
         active_events = active_events[order]
         roots = roots[order]
         t = np.nonzero(is_terminal[active_events])[0][0]
@@ -507,8 +504,7 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
     """
     if method not in METHODS and not (
             inspect.isclass(method) and issubclass(method, OdeSolver)):
-        raise ValueError("`method` must be one of {} or OdeSolver class."
-                         .format(METHODS))
+        raise ValueError(f"`method` must be one of {METHODS} or OdeSolver class.")
 
     t0, tf = map(float, t_span)
 
@@ -558,7 +554,7 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
     if t_eval is None:
         ts = [t0]
         ys = [y0]
-    elif t_eval is not None and dense_output:
+    elif dense_output:
         ts = []
         ti = [t0]
         ys = []
@@ -589,12 +585,12 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
     while status is None:
         message = solver.step()
 
-        if solver.status == 'finished':
-            status = 0
-        elif solver.status == 'failed':
+        if solver.status == 'failed':
             status = -1
             break
 
+        elif solver.status == 'finished':
+            status = 0
         t_old = solver.t_old
         t = solver.t
         y = solver.y

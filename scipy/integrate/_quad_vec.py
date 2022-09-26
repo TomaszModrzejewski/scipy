@@ -40,18 +40,14 @@ class SemiInfiniteFunc:
 
     def get_t(self, x):
         z = self._sgn * (x - self._start) + 1
-        if z == 0:
-            # Can happen only if point not in range
-            return np.inf
-        return 1 / z
+        return np.inf if z == 0 else 1 / z
 
     def __call__(self, t):
         if t < self._tmin:
             return 0.0
-        else:
-            x = self._start + self._sgn * (1 - t) / t
-            f = self._func(x)
-            return self._sgn * (f / t) / t
+        x = self._start + self._sgn * (1 - t) / t
+        f = self._func(x)
+        return self._sgn * (f / t) / t
 
 
 class DoubleInfiniteFunc:
@@ -71,10 +67,9 @@ class DoubleInfiniteFunc:
     def __call__(self, t):
         if abs(t) < self._tmin:
             return 0.0
-        else:
-            x = (1 - abs(t)) / t
-            f = self._func(x)
-            return (f / t) / t
+        x = (1 - abs(t)) / t
+        f = self._func(x)
+        return (f / t) / t
 
 
 def _max_norm(x):
@@ -86,9 +81,7 @@ def _get_sizeof(obj):
         return sys.getsizeof(obj)
     except TypeError:
         # occurs on pypy
-        if hasattr(obj, '__sizeof__'):
-            return int(obj.__sizeof__())
-        return 64
+        return int(obj.__sizeof__()) if hasattr(obj, '__sizeof__') else 64
 
 
 class _Bunch:
@@ -97,8 +90,9 @@ class _Bunch:
         self.__dict__.update(**kwargs)
 
     def __repr__(self):
-        return "_Bunch({})".format(", ".join("{}={}".format(k, repr(self.__dict__[k]))
-                                             for k in self.__keys))
+        return "_Bunch({})".format(
+            ", ".join(f"{k}={repr(self.__dict__[k])}" for k in self.__keys)
+        )
 
 
 def quad_vec(f, a, b, epsabs=1e-200, epsrel=1e-8, norm='2', cache_size=100e6, limit=10000,

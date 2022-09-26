@@ -78,8 +78,9 @@ def pickle_function(func):
 
     if test is not func:
         raise pickle.PicklingError(
-            "Can't pickle {}: it's not the same object as {}".format(func, test)
+            f"Can't pickle {func}: it's not the same object as {test}"
         )
+
 
     return unpickle_function, (mod_name, qname, self_)
 
@@ -479,11 +480,12 @@ def all_of_type(arg_type):
         def inner(*args, **kwargs):
             extracted_args = func(*args, **kwargs)
             return tuple(
-                Dispatchable(arg, arg_type)
-                if not isinstance(arg, Dispatchable)
-                else arg
+                arg
+                if isinstance(arg, Dispatchable)
+                else Dispatchable(arg, arg_type)
                 for arg in extracted_args
             )
+
 
         return inner
 
@@ -695,8 +697,8 @@ def determine_backend_multi(
         if not all(isinstance(d, Dispatchable) for d in dispatchables):
             raise TypeError("dispatchables must be instances of uarray.Dispatchable")
 
-    if len(kwargs) != 0:
-        raise TypeError("Received unexpected keyword arguments: {}".format(kwargs))
+    if kwargs:
+        raise TypeError(f"Received unexpected keyword arguments: {kwargs}")
 
     backend = _uarray.determine_backend(domain, dispatchables, coerce)
 

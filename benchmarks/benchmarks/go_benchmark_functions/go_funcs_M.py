@@ -238,7 +238,7 @@ class Mishra01(Benchmark):
     def fun(self, x, *args):
         self.nfev += 1
 
-        xn = self.N - sum(x[0:-1])
+        xn = self.N - sum(x[:-1])
         return (1 + xn) ** xn
 
 
@@ -485,8 +485,7 @@ class Mishra07(Benchmark):
 
         self._bounds = list(zip([-10.0] * self.N, [10.0] * self.N))
         self.custom_bounds = [(-2, 2), (-2, 2)]
-        self.global_optimum = [[sqrt(self.N)
-                               for i in range(self.N)]]
+        self.global_optimum = [[sqrt(self.N) for _ in range(self.N)]]
         self.fglob = 0.0
         self.change_dimensionality = True
 

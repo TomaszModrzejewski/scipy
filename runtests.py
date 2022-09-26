@@ -188,12 +188,10 @@ def main(argv):
             ns = dict(__name__='__main__',
                       __file__=extra_argv[0])
             exec(script, ns)
-            sys.exit(0)
         else:
             import code
             code.interact()
-            sys.exit(0)
-
+        sys.exit(0)
     if args.ipython:
         import IPython
         IPython.embed(user_ns={})
@@ -206,10 +204,10 @@ def main(argv):
         sys.exit(1)
 
     if args.doc:
-        cmd = ["make", "-Cdoc", 'PYTHON="{}"'.format(sys.executable)]
+        cmd = ["make", "-Cdoc", f'PYTHON="{sys.executable}"']
         cmd += args.doc
         if args.parallel:
-            cmd.append('SPHINXOPTS="-j{}"'.format(args.parallel))
+            cmd.append(f'SPHINXOPTS="-j{args.parallel}"')
         subprocess.run(cmd, check=True)
         sys.exit(0)
 
@@ -218,7 +216,7 @@ def main(argv):
         fn = os.path.join(dst_dir, 'coverage_html.js')
         if os.path.isdir(dst_dir) and os.path.isfile(fn):
             shutil.rmtree(dst_dir)
-        extra_argv += ['--cov-report=html:' + dst_dir]
+        extra_argv += [f'--cov-report=html:{dst_dir}']
 
     if args.refguide_check:
         cmd = [os.path.join(ROOT_DIR, 'tools', 'refguide_check.py'),
@@ -244,8 +242,10 @@ def main(argv):
 
         if not args.bench_compare:
             import scipy
-            print("Running benchmarks for Scipy version %s at %s"
-                  % (scipy.__version__, scipy.__file__))
+            print(
+                f"Running benchmarks for Scipy version {scipy.__version__} at {scipy.__file__}"
+            )
+
             cmd = ['asv', 'run', '--dry-run', '--show-stderr',
                    '--python=same'] + bench_args
             retval = run_asv(cmd)
@@ -307,7 +307,7 @@ def main(argv):
 
 
     if args.submodule:
-        tests = [PROJECT_MODULE + "." + args.submodule]
+        tests = [f"{PROJECT_MODULE}.{args.submodule}"]
     elif args.tests:
         tests = args.tests
     else:
@@ -328,8 +328,10 @@ def main(argv):
     cwd = os.getcwd()
     try:
         os.chdir(test_dir)
-        print("Running tests for {} version:{}, installed at:{}".format(
-              PROJECT_MODULE, version, mod_path))
+        print(
+            f"Running tests for {PROJECT_MODULE} version:{version}, installed at:{mod_path}"
+        )
+
         result = test(args.mode,
                       verbose=args.verbose,
                       extra_argv=extra_argv,
@@ -369,7 +371,7 @@ def get_path_suffix(current_path, levels=3):
     function should suffice.
     """
     current_new = current_path
-    for i in range(levels):
+    for _ in range(levels):
         current_new = os.path.dirname(current_new)
 
     return os.path.relpath(current_path, current_new)
@@ -406,26 +408,30 @@ def build_project(args):
         # assume everyone uses gcc/gfortran
         env['OPT'] = '-O0 -ggdb'
         env['FOPT'] = '-O0 -ggdb'
-        if args.gcov:
-            from sysconfig import get_config_vars
-            cvars = get_config_vars()
-            env['OPT'] = '-O0 -ggdb'
-            env['FOPT'] = '-O0 -ggdb'
-            env['CC'] = env.get('CC', cvars['CC']) + ' --coverage'
-            env['CXX'] = env.get('CXX', cvars['CXX']) + ' --coverage'
-            env['F77'] = 'gfortran --coverage '
-            env['F90'] = 'gfortran --coverage '
-            env['LDSHARED'] = cvars['LDSHARED'] + ' --coverage'
-            env['LDFLAGS'] = " ".join(cvars['LDSHARED'].split()[1:]) +\
-                ' --coverage'
+    if args.gcov:
+        from sysconfig import get_config_vars
+        cvars = get_config_vars()
+        env['OPT'] = '-O0 -ggdb'
+        env['FOPT'] = '-O0 -ggdb'
+        env['CC'] = env.get('CC', cvars['CC']) + ' --coverage'
+        env['CXX'] = env.get('CXX', cvars['CXX']) + ' --coverage'
+        env['F77'] = 'gfortran --coverage '
+        env['F90'] = 'gfortran --coverage '
+        env['LDSHARED'] = cvars['LDSHARED'] + ' --coverage'
+        env['LDFLAGS'] = " ".join(cvars['LDSHARED'].split()[1:]) +\
+            ' --coverage'
 
     cmd += ['build']
     if args.parallel > 1:
         cmd += ['-j', str(args.parallel)]
     # Install; avoid producing eggs so SciPy can be imported from dst_dir.
-    cmd += ['install', '--prefix=' + dst_dir,
-            '--single-version-externally-managed',
-            '--record=' + dst_dir + 'tmp_install_log.txt']
+    cmd += [
+        'install',
+        f'--prefix={dst_dir}',
+        '--single-version-externally-managed',
+        f'--record={dst_dir}tmp_install_log.txt',
+    ]
+
 
     from sysconfig import get_path
     py_path = get_path('platlib')
@@ -508,15 +514,10 @@ LCOV_HTML_DIR = os.path.join(ROOT_DIR, 'build', 'lcov')
 
 
 def lcov_generate():
-    try:
+    with contextlib.suppress(OSError):
         os.unlink(LCOV_OUTPUT_FILE)
-    except OSError:
-        pass
-    try:
+    with contextlib.suppress(OSError):
         shutil.rmtree(LCOV_HTML_DIR)
-    except OSError:
-        pass
-
     print("Capturing lcov info...")
     subprocess.call(['lcov', '-q', '-c',
                      '-d', os.path.join(ROOT_DIR, 'build'),
@@ -590,11 +591,8 @@ def run_asv(cmd):
     # Limit memory usage
     sys.path.insert(0, cwd)
     from benchmarks.common import set_mem_rlimit
-    try:
+    with contextlib.suppress(ImportError, RuntimeError):
         set_mem_rlimit()
-    except (ImportError, RuntimeError):
-        pass
-
     # Run
     try:
         return subprocess.call(cmd, env=env, cwd=cwd)

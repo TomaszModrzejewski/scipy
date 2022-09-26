@@ -7,6 +7,7 @@ print '10 mile per minute is', 10*mile/minute, 'm/s or', 10*mile/(minute*knot), 
 The list is not meant to be comprehensive, but just convenient for everyday use.
 """
 
+
 from __future__ import annotations
 
 import math as _math
@@ -173,7 +174,7 @@ parsec = au / arcsec
 atm = atmosphere = _cd('standard atmosphere')
 bar = 1e5
 torr = mmHg = atm / 760
-psi = pound * g / (inch * inch)
+psi = pound * g / inch**2
 
 # area in meter**2
 hectare = 1e4
@@ -265,26 +266,26 @@ def convert_temperature(
 
     """
     # Convert from `old_scale` to Kelvin
-    if old_scale.lower() in ['celsius', 'c']:
+    if old_scale.lower() in {'celsius', 'c'}:
         tempo = _np.asanyarray(val) + zero_Celsius
-    elif old_scale.lower() in ['kelvin', 'k']:
+    elif old_scale.lower() in {'kelvin', 'k'}:
         tempo = _np.asanyarray(val)
-    elif old_scale.lower() in ['fahrenheit', 'f']:
+    elif old_scale.lower() in {'fahrenheit', 'f'}:
         tempo = (_np.asanyarray(val) - 32) * 5 / 9 + zero_Celsius
-    elif old_scale.lower() in ['rankine', 'r']:
+    elif old_scale.lower() in {'rankine', 'r'}:
         tempo = _np.asanyarray(val) * 5 / 9
     else:
         raise NotImplementedError("%s scale is unsupported: supported scales "
                                   "are Celsius, Kelvin, Fahrenheit, and "
                                   "Rankine" % old_scale)
     # and from Kelvin to `new_scale`.
-    if new_scale.lower() in ['celsius', 'c']:
+    if new_scale.lower() in {'celsius', 'c'}:
         res = tempo - zero_Celsius
-    elif new_scale.lower() in ['kelvin', 'k']:
+    elif new_scale.lower() in {'kelvin', 'k'}:
         res = tempo
-    elif new_scale.lower() in ['fahrenheit', 'f']:
+    elif new_scale.lower() in {'fahrenheit', 'f'}:
         res = (tempo - zero_Celsius) * 9 / 5 + 32
-    elif new_scale.lower() in ['rankine', 'r']:
+    elif new_scale.lower() in {'rankine', 'r'}:
         res = tempo * 9 / 5
     else:
         raise NotImplementedError("'%s' scale is unsupported: supported "

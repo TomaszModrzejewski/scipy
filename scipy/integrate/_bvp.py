@@ -146,13 +146,12 @@ def stacked_matmul(a, b):
     Empirical optimization. Use outer Python loop and BLAS for large
     matrices, otherwise use a single einsum call.
     """
-    if a.shape[1] > 50:
-        out = np.empty((a.shape[0], a.shape[1], b.shape[2]))
-        for i in range(a.shape[0]):
-            out[i] = np.dot(a[i], b[i])
-        return out
-    else:
+    if a.shape[1] <= 50:
         return np.einsum('...ij,...jk->...ik', a, b)
+    out = np.empty((a.shape[0], a.shape[1], b.shape[2]))
+    for i in range(a.shape[0]):
+        out[i] = np.dot(a[i], b[i])
+    return out
 
 
 def construct_global_jac(n, m, k, i_jac, j_jac, h, df_dy, df_dy_middle, df_dp,
@@ -442,7 +441,7 @@ def solve_newton(n, m, h, col_fun, bc, jac, y, p, B, bvp_tol, bc_tol):
     njev = 0
     singular = False
     recompute_jac = True
-    for iteration in range(max_iter):
+    for _ in range(max_iter):
         if recompute_jac:
             J = jac(y, p, y_middle, f, f_middle, bc_res)
             njev += 1

@@ -8,9 +8,9 @@ boxs = 5
 voxelarray = np.zeros((boxs * grids, boxs * grids, boxs * grids))
 
 i = 1
-for xi in range(0, 2):
-    for yi in range(0, 2):
-        for zi in range(0, 2):
+for xi in range(2):
+    for yi in range(2):
+        for zi in range(2):
             voxelarray[
                 xi * boxs: xi * boxs + boxs,
                 yi * boxs: yi * boxs + boxs,

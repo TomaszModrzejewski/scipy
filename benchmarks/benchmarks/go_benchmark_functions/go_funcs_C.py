@@ -521,9 +521,7 @@ class Csendes(Benchmark):
 
         try:
             return sum((x ** 6.0) * (2.0 + sin(1.0 / x)))
-        except ZeroDivisionError:
-            return np.nan
-        except FloatingPointError:
+        except (ZeroDivisionError, FloatingPointError):
             return np.nan
 
     def success(self, x):

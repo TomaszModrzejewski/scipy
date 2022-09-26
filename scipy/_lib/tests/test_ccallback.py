@@ -23,10 +23,7 @@ def callback_python(a, user_data=None):
     if a == ERROR_VALUE:
         raise ValueError("bad value")
 
-    if user_data is None:
-        return a + 1
-    else:
-        return a + user_data
+    return a + 1 if user_data is None else a + user_data
 
 def _get_cffi_func(base, signature):
     if not HAVE_CFFI:
@@ -38,8 +35,7 @@ def _get_cffi_func(base, signature):
 
     # Create corresponding cffi handle
     ffi = cffi.FFI()
-    func = ffi.cast(signature, address)
-    return func
+    return ffi.cast(signature, address)
 
 
 def _get_ctypes_data():
@@ -169,9 +165,8 @@ def test_threadsafety():
     def callback(a, caller):
         if a <= 0:
             return 1
-        else:
-            res = caller(lambda x: callback(x, caller), a - 1)
-            return 2*res
+        res = caller(lambda x: callback(x, caller), a - 1)
+        return 2*res
 
     def check(caller):
         caller = CALLERS[caller]

@@ -75,9 +75,9 @@ class Sort(Benchmark):
     param_names = ['matrix']
 
     def setup(self, matrix):
-        n = 10000
         if matrix.startswith('Rand'):
             k = int(matrix[4:])
+            n = 10000
             self.A = random_sparse(n, n, k)
             self.A.has_sorted_indices = False
             self.A.indices[:2] = 2, 1
@@ -156,7 +156,7 @@ class Matmul(Benchmark):
         self.matrix2 = coo_matrix((data, (i, j)), shape=(H2, W2)).tocsr()
 
     def time_large(self):
-        for i in range(100):
+        for _ in range(100):
             self.matrix1 * self.matrix2
 
     # Retain old benchmark results (remove this if changing the benchmark)
@@ -193,7 +193,7 @@ class BlockDiagDenseConstruction(Benchmark):
 
     def setup(self, num_matrices):
         self.matrices = []
-        for i in range(num_matrices):
+        for _ in range(num_matrices):
             rows = np.random.randint(1, 4)
             columns = np.random.randint(1, 4)
             mat = np.random.randint(0, 10, (rows, columns))
@@ -209,7 +209,7 @@ class BlockDiagSparseConstruction(Benchmark):
 
     def setup(self, num_matrices):
         self.matrices = []
-        for i in range(num_matrices):
+        for _ in range(num_matrices):
             rows = np.random.randint(1, 20)
             columns = np.random.randint(1, 20)
             mat = np.random.randint(0, 10, (rows, columns))
@@ -244,7 +244,7 @@ class Conversion(Benchmark):
         base = poisson2d(100, format=fromfmt)
 
         try:
-            self.fn = getattr(base, 'to' + tofmt)
+            self.fn = getattr(base, f'to{tofmt}')
         except Exception:
             def fn():
                 raise RuntimeError()
@@ -302,10 +302,7 @@ class Getset(Benchmark):
         number = 1
         start = time.time()
         while time.time() - start < 0.1:
-            if recopy:
-                m = self.m.copy()
-            else:
-                m = self.m
+            m = self.m.copy() if recopy else self.m
             while True:
                 duration = timeit.timeit(
                     lambda: kernel(m, self.i, self.j, self.v), number=number)
@@ -345,7 +342,7 @@ class NullSlice(Benchmark):
         X = coo_matrix((data, (row, col)), shape=(n, k))
         X.sum_duplicates()
         X = X.asformat(format)
-        with open('{}-{}.pck'.format(density, format), 'wb') as f:
+        with open(f'{density}-{format}.pck', 'wb') as f:
             pickle.dump(X, f, protocol=pickle.HIGHEST_PROTOCOL)
 
     def setup_cache(self):
@@ -357,7 +354,7 @@ class NullSlice(Benchmark):
 
     def setup(self, density, format):
         # Unpickling is faster than computing the random matrix...
-        with open('{}-{}.pck'.format(density, format), 'rb') as f:
+        with open(f'{density}-{format}.pck', 'rb') as f:
             self.X = pickle.load(f)
 
     def time_getrow(self, density, format):
@@ -444,8 +441,7 @@ class Iteration(Benchmark):
         self.X = sparse.rand(n, k, format=format, density=density)
 
     def time_iteration(self, density, format):
-        for row in self.X:
-            pass
+        pass
 
 
 class Densify(Benchmark):
